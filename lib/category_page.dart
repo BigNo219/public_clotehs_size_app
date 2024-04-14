@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:ddundddun/photo_page.dart';
+import 'package:ddundddun/category_selection_page.dart';
 
 class CategoryPage extends StatefulWidget {
   final String category;
@@ -16,6 +17,8 @@ class CategoryPage extends StatefulWidget {
 
 class _CategoryPageState extends State<CategoryPage> {
   late Future<List<FileSystemEntity>> _imageFilesFuture;
+  List<String> _selectedImagePaths = [];
+  bool _isSelectionMode = false;
 
   @override
   void initState() {
@@ -41,29 +44,161 @@ class _CategoryPageState extends State<CategoryPage> {
     }
   }
 
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedImagePaths.clear();
+    });
+  }
+
+  void _selectImage(String imagePath) {
+    setState(() {
+      if (_selectedImagePaths.contains(imagePath)) {
+        _selectedImagePaths.remove(imagePath);
+      } else {
+        _selectedImagePaths.add(imagePath);
+      }
+    });
+  }
+
+  void _selectAllImages() {
+    setState(() {
+      _imageFilesFuture.then((imageFiles) {
+        _selectedImagePaths = imageFiles.map((file) => file.path).toList();
+        _isSelectionMode = true;
+      }).catchError((_) {
+        _selectedImagePaths = [];
+        _isSelectionMode = false;
+      });
+    });
+  }
+
+  Future<void> _deleteSelectedImages() async {
+    if (_selectedImagePaths.isEmpty) return;
+
+    final confirmed = await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('사진 삭제'),
+          content: Text('선택한 사진을 삭제하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text('삭제'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      for (String imagePath in _selectedImagePaths) {
+        try {
+          await File(imagePath).delete();
+          // 관련된 데이터 삭제 로직 추가
+        } catch (e) {
+          print('Failed to delete image: $imagePath, error: $e');
+        }
+      }
+      setState(() {
+        _selectedImagePaths.clear();
+        _isSelectionMode = false;
+        _imageFilesFuture = _getImageFiles();
+      });
+    }
+  }
+
+  Future<void> _moveSelectedImages() async {
+    if (_selectedImagePaths.isEmpty) return;
+
+    final result = await showDialog(
+      context: context,
+      builder: (context) => CategorySelectionDialog(
+        onCategorySelected: (category, subCategory) {
+          Navigator.pop(context, [category, subCategory]);
+        },
+      ),
+    );
+
+    if (result != null && result.length == 2) {
+      final selectedCategory = result[0];
+      final selectedSubCategory = result[1];
+
+      for (String imagePath in _selectedImagePaths) {
+        final file = File(imagePath);
+        final oldPath = file.path;
+        final newPath = path.join(
+          (await getApplicationDocumentsDirectory()).path,
+          selectedCategory,
+          selectedSubCategory,
+          path.basename(imagePath),
+        );
+
+        try {
+          await file.rename(newPath);
+          print('이미지 이동 성공: $oldPath -> $newPath');
+        } catch (e) {
+          print('이미지 이동 실패: $oldPath, error: $e');
+        }
+      }
+
+      setState(() {
+        _selectedImagePaths.clear();
+        _isSelectionMode = false;
+        _imageFilesFuture = _getImageFiles();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.category} - ${widget.subCategory}')),
+      appBar: AppBar(
+        title: Text('${widget.category} - ${widget.subCategory}'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit, color: Colors.cyanAccent),
+            onPressed: () {
+              if(_selectedImagePaths.isEmpty) {
+                _selectAllImages();
+              } else {
+                _moveSelectedImages();
+              }
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.delete, color: Colors.red),
+            onPressed: _isSelectionMode ? _deleteSelectedImages : _toggleSelectionMode,
+          ),
+        ],
+      ),
       body: FutureBuilder<List<FileSystemEntity>>(
         future: _imageFilesFuture,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final imageFiles = snapshot.data!;
-            if(imageFiles.isEmpty) {
+            if (imageFiles.isEmpty) {
               return Center(child: Text('해당 카테고리에 저장된 사진이 없습니다.'));
             }
             return GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                crossAxisSpacing: 4,
-                mainAxisSpacing: 4,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
               ),
+              padding: EdgeInsets.all(8),
               itemCount: imageFiles.length,
               itemBuilder: (context, index) {
                 final imageFile = imageFiles[index];
                 return GestureDetector(
-                  onTap: () {
+                  onTap: _isSelectionMode
+                      ? () => _selectImage(imageFile.path)
+                      : () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -71,9 +206,27 @@ class _CategoryPageState extends State<CategoryPage> {
                       ),
                     );
                   },
-                  child: Image.file(
-                    File(imageFile.path),
-                    fit: BoxFit.cover,
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          File(imageFile.path),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      if (_isSelectionMode)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Icon(
+                            _selectedImagePaths.contains(imageFile.path)
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            color: Colors.blue,
+                          ),
+                        ),
+                    ],
                   ),
                 );
               },
@@ -85,6 +238,33 @@ class _CategoryPageState extends State<CategoryPage> {
           }
         },
       ),
+    );
+  }
+}
+
+class CategorySelectionDialog extends StatelessWidget {
+  final Function(String, String) onCategorySelected;
+
+  const CategorySelectionDialog({required this.onCategorySelected});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('카테고리 선택'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: CategorySelectionPage(
+            onCategorySelected: onCategorySelected,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('취소'),
+        ),
+      ],
     );
   }
 }

@@ -120,6 +120,32 @@ class _MyHomePageState extends State<MyHomePage> {
     return path.join(dateDir, weekdayDir);
   }
 
+  // 앱 용량 계산
+  Future<String> _calculateAppSize() async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final appSize = await _getTotalSizeOfFilesInDir(appDir);
+    final sizeInMB = (appSize / (1024 * 1024)).toStringAsFixed(2);
+    return '$sizeInMB MB';
+  }
+
+  // 디렉토리 용량 계산
+  Future<int> _getTotalSizeOfFilesInDir(final FileSystemEntity file) async {
+    if (file is File) {
+      final fileStat = await file.stat();
+      return fileStat.size;
+    }
+    if (file is Directory) {
+      final children = file.listSync();
+      int total = 0;
+      for (final FileSystemEntity child in children) {
+        total += await _getTotalSizeOfFilesInDir(child);
+      }
+      return total;
+    }
+    return 0;
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -178,6 +204,19 @@ class _MyHomePageState extends State<MyHomePage> {
                 '촬영',
                 style: TextStyle(fontSize: 20),
               ),
+            ),
+            SizedBox(height: 20),
+            FutureBuilder<String>(
+              future: _calculateAppSize(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Text(
+                    '앱 용량: ${snapshot.data}',
+                    style: TextStyle(fontSize: 16),
+                  );
+                }
+                return SizedBox();
+              },
             ),
           ],
         ),
