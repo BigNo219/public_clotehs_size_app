@@ -47,5 +47,9 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Used to demonstrate image picker plugin</string>
+	<key>NSCameraUsageDescription</key>
+    <string>앱에서 카메라를 사용합니다</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>앱에서 사진 라이브러리에 접근합니다</string>
 </dict>
 </plist>
