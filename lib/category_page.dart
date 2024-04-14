@@ -61,18 +61,6 @@ class _CategoryPageState extends State<CategoryPage> {
     });
   }
 
-  void _selectAllImages() {
-    setState(() {
-      _imageFilesFuture.then((imageFiles) {
-        _selectedImagePaths = imageFiles.map((file) => file.path).toList();
-        _isSelectionMode = true;
-      }).catchError((_) {
-        _selectedImagePaths = [];
-        _isSelectionMode = false;
-      });
-    });
-  }
-
   Future<void> _deleteSelectedImages() async {
     if (_selectedImagePaths.isEmpty) return;
 
@@ -110,6 +98,7 @@ class _CategoryPageState extends State<CategoryPage> {
         _isSelectionMode = false;
         _imageFilesFuture = _getImageFiles();
       });
+      Navigator.pop(context, true);  // Return true on successful delete
     }
   }
 
@@ -118,7 +107,7 @@ class _CategoryPageState extends State<CategoryPage> {
 
     final result = await showDialog(
       context: context,
-      builder: (context) => CategorySelectionDialog(
+      builder: (context) => CategorySelectionPage(
         onCategorySelected: (category, subCategory) {
           Navigator.pop(context, [category, subCategory]);
         },
@@ -141,9 +130,13 @@ class _CategoryPageState extends State<CategoryPage> {
 
         try {
           await file.rename(newPath);
-          print('이미지 이동 성공: $oldPath -> $newPath');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('카테고리 이동 성공: $oldPath -> $newPath'))
+          );
         } catch (e) {
-          print('이미지 이동 실패: $oldPath, error: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('카테고리 이동 실패: $oldPath, error: $e'))
+          );
         }
       }
 
@@ -152,6 +145,7 @@ class _CategoryPageState extends State<CategoryPage> {
         _isSelectionMode = false;
         _imageFilesFuture = _getImageFiles();
       });
+      Navigator.pop(context, true);  // Return true on successful delete
     }
   }
 
@@ -160,20 +154,23 @@ class _CategoryPageState extends State<CategoryPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.category} - ${widget.subCategory}'),
-        actions: [
+        actions: _isSelectionMode ? [
           IconButton(
-            icon: Icon(Icons.edit, color: Colors.cyanAccent),
-            onPressed: () {
-              if(_selectedImagePaths.isEmpty) {
-                _selectAllImages();
-              } else {
-                _moveSelectedImages();
-              }
-            },
+            icon: Icon(Icons.send, color: Colors.cyanAccent),
+            onPressed: _moveSelectedImages,
           ),
           IconButton(
             icon: Icon(Icons.delete, color: Colors.red),
-            onPressed: _isSelectionMode ? _deleteSelectedImages : _toggleSelectionMode,
+            onPressed: _deleteSelectedImages,
+          ),
+        ] : [
+          IconButton(
+            icon: Icon(Icons.edit, color: Colors.grey),
+            onPressed: () {
+              setState(() {
+                _toggleSelectionMode();
+              });
+            },
           ),
         ],
       ),
@@ -238,33 +235,6 @@ class _CategoryPageState extends State<CategoryPage> {
           }
         },
       ),
-    );
-  }
-}
-
-class CategorySelectionDialog extends StatelessWidget {
-  final Function(String, String) onCategorySelected;
-
-  const CategorySelectionDialog({required this.onCategorySelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('카테고리 선택'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: CategorySelectionPage(
-            onCategorySelected: onCategorySelected,
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('취소'),
-        ),
-      ],
     );
   }
 }
