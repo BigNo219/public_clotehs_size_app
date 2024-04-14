@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      title: 'DDunddun App',
+      title: '3LS Size',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -39,8 +39,46 @@ class _MyHomePageState extends State<MyHomePage> {
     '원피스': ['롱원피스', '숏원피스', '점프수트'],
   };
 
-  String _selectedCategory = '상의';
-  String _selectedSubCategory = '맨투맨';
+  @override
+  void initState() {
+    super.initState();
+    _requestPermission();
+  }
+
+  // 카메라 및 사진, 저장소 접근 권한 요청
+  Future<void> _requestPermission() async {
+    final status = await [
+      Permission.photos,
+      Permission.camera,
+      Permission.storage
+    ].request();
+
+    if (status[Permission.photos]!.isDenied|| status[Permission.camera]!.isDenied || status[Permission.storage]!.isDenied) {
+      // 권한이 거부되면 추가적인 안내를 제공
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("필요한 권한"),
+          content: Text("앱에서 필요한 권한이 거부되었습니다. 설정에서 권한을 허용해주세요."),
+          actions: [
+            TextButton(
+              onPressed: ()  {
+                openAppSettings(); // 사용자가 앱 설정 페이지로 이동시키는 함수
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                "설정으로 이동",
+                ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("취소"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   Future<void> _takePicture() async {
     final picker = ImagePicker();
