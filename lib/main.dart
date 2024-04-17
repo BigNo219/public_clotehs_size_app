@@ -7,7 +7,6 @@ import 'package:ddundddun/delete_selection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 
@@ -172,7 +171,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _saveImage(String imagePath, String category, String subCategory) async {
-    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
     final cloudinaryImagePath = '$category/$subCategory';
 
     final imageUrl = await uploadImageToCloudinary(
