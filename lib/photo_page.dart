@@ -1,12 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as Path;
 
 class PhotoPage extends StatefulWidget {
-  final String imagePath;
+  final String imageUrl;
 
-  PhotoPage({required this.imagePath});
+  PhotoPage({required this.imageUrl});
 
   @override
   _PhotoPageState createState() => _PhotoPageState();
@@ -14,33 +11,17 @@ class PhotoPage extends StatefulWidget {
 
 class _PhotoPageState extends State<PhotoPage> {
   late TextEditingController _descriptionController;
-  late String _savedImagePath;
 
   @override
   void initState() {
     super.initState();
     _descriptionController = TextEditingController();
-    _savedImagePath = widget.imagePath;
-    _loadDescription();
-  }
-
-  Future<void> _loadDescription() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final descriptionFile = File('${appDir.path}/${Path.basenameWithoutExtension(_savedImagePath)}.txt');
-
-    if (await descriptionFile.exists()) {
-      final description = await descriptionFile.readAsString();
-      _descriptionController.text = description;
-    }
   }
 
   Future<void> _saveDescription() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final descriptionFile = File('${appDir.path}/${Path.basenameWithoutExtension(_savedImagePath)}.txt');
-
-    await descriptionFile.writeAsString(_descriptionController.text);
+    // Cloudinary에 설명 저장하는 로직 추가
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('정보 저장 완료.')),
+      SnackBar(content: Text('정보 저장 완료.')),
     );
   }
 
@@ -52,7 +33,7 @@ class _PhotoPageState extends State<PhotoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Image.file(File(_savedImagePath)),
+            Image.network(widget.imageUrl),
             Padding(
               padding: EdgeInsets.all(16.0),
               child: TextField(

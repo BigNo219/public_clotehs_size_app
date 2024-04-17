@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:intl/intl.dart';
 import 'package:ddundddun/category_selection_page.dart';
 import 'package:ddundddun/delete_selection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:cloudinary_public/cloudinary_public.dart';
 
 void main() {
   runApp(MyApp());
@@ -15,14 +14,13 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-
-      title: '3LS Size',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(),
+     return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: '3LS Size',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: MyHomePage(),
     );
   }
 }
@@ -33,6 +31,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
   final clothingCategories = {
     '상의': ['맨투맨', '반팔티', '후드티', '니트', '가디건', '코트', '셔츠', '블라우스'],
     '하의': ['바지', '롱치마', '숏치마', '멜빵바지', '레깅스', '스커트'],
@@ -48,12 +47,10 @@ class _MyHomePageState extends State<MyHomePage> {
   // 카메라 및 사진, 저장소 접근 권한 요청
   Future<void> _requestPermission() async {
     final status = await [
-      Permission.photos,
       Permission.camera,
-      Permission.storage
     ].request();
 
-    if (status[Permission.photos]!.isDenied|| status[Permission.camera]!.isDenied || status[Permission.storage]!.isDenied) {
+    if (status[Permission.camera]!.isDenied ) {
       // 권한이 거부되면 추가적인 안내를 제공
       showDialog(
         context: context,
@@ -80,6 +77,31 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<String> uploadImageToCloudinary(
+      String imagePath,
+      String cloudinaryImagePath ) async {
+    try {
+      final cloudinary = CloudinaryPublic(
+          'duqykedvy',
+          'flutter_clotehs_size_app',
+          apiKey: '491384474792879',
+          apiSecret: 'hE8xMCTm7R8q8mf0K_MrlguymiU',
+          cache: false);
+
+      final response = await cloudinary.uploadFile(
+        CloudinaryFile.fromFile(
+            imagePath,
+            resourceType: CloudinaryResourceType.Image,
+            folder: cloudinaryImagePath),
+      );
+
+      return response.secureUrl!;
+    } catch (e) {
+      print('Failed to upload image to Cloudinary: $e');
+      return '';
+    }
+  }
+
   Future<void> _takePicture() async {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.camera);
@@ -90,7 +112,16 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  // 카테고리 선택 다이얼로그 표시
+  Future<void> _selectImageFromGallery() async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedImage != null) {
+      final imagePath = pickedImage.path;
+      await _showCategoryDialog(imagePath);
+    }
+  }
+
   Future<void> _showCategoryDialog(String imagePath) async {
     await showDialog(
       context: context,
@@ -133,30 +164,26 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // 사진 저장 함수
   Future<void> _saveImage(String imagePath, String category, String subCategory) async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final timeDir = _getTimeDirPath();
-    final categoryDir = Directory(path.join(appDir.path, category, subCategory)); // 0final categoryDir = Directory(path.join(appDir.path, timeDir, category, subCategory));
-    await categoryDir.create(recursive: true);
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final cloudinaryImagePath = '$category/$subCategory';
 
-    final fileName = DateTime.now().millisecondsSinceEpoch.toString();
-    final savedImagePath = path.join(categoryDir.path, '$fileName.jpg');
-    await File(imagePath).copy(savedImagePath);
-    print('Saving image to $savedImagePath');
+    final imageUrl = await uploadImageToCloudinary(
+        imagePath,
+        cloudinaryImagePath
+    );
+    print('Image URL: $imageUrl');
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('" $category -> $subCategory "에 저장되었습니다.'))
+      SnackBar(content: Text('" $category -> $subCategory "에 저장되었습니다.')),
     );
-  }
 
-  // 시간별 디렉토리 경로 생성
-  String _getTimeDirPath() {
-    final now = DateTime.now();
-    final dateDir = DateFormat('yyyyMMdd').format(now);
-    final weekdayDir = DateFormat('EEEE').format(now);
-
-    return path.join(dateDir, weekdayDir);
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Image.network(imageUrl),
+      ),
+    );
   }
 
   // 앱 용량 계산
@@ -229,32 +256,56 @@ class _MyHomePageState extends State<MyHomePage> {
               height: 120,
             ),
             SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: _takePicture,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[800],
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: _takePicture,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[800],
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: Text(
+                    '촬영',
+                    style: TextStyle(fontSize: 20),
+                  ),
                 ),
-              ),
-              child: Text(
-                '촬영',
-                style: TextStyle(fontSize: 20),
-              ),
+                SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: _selectImageFromGallery,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[800],
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: Text(
+                    '갤러리',
+                    style: TextStyle(fontSize: 20),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 20),
             FutureBuilder<String>(
               future: _calculateAppSize(),
               builder: (context, snapshot) {
-                if (snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
                   return Text(
                     '앱 용량: ${snapshot.data}',
                     style: TextStyle(fontSize: 16),
                   );
                 }
-                return SizedBox();
               },
             ),
           ],
