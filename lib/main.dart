@@ -6,8 +6,15 @@ import 'package:ddundddun/category_selection_page.dart';
 import 'package:ddundddun/delete_selection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() {
+
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -16,7 +23,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
      return MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: '3LS Size',
+        title: 'Size App',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
@@ -178,6 +185,13 @@ class _MyHomePageState extends State<MyHomePage> {
       SnackBar(content: Text('" $category -> $subCategory "에 저장되었습니다.')),
     );
 
+    final imageData = {
+      'url' : imageUrl,
+      'category' : category,
+      'subCategory' : subCategory,
+    };
+
+    await FirebaseFirestore.instance.collection('images').add(imageData);
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -218,7 +232,7 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          '3LStudio Size',
+          '[ UN;BUTTY ] ... Size App',
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -251,7 +265,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/logo.png',
+              'assets/logo2.png',
               width: 200,
               height: 120,
             ),
@@ -259,6 +273,22 @@ class _MyHomePageState extends State<MyHomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                ElevatedButton(
+                  onPressed: _selectImageFromGallery,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[600],
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: Text(
+                    'Gallery',
+                    style: TextStyle(fontSize: 20),
+                  ),
+                ),
+                SizedBox(width: 20),
                 ElevatedButton(
                   onPressed: _takePicture,
                   style: ElevatedButton.styleFrom(
@@ -270,23 +300,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                   child: Text(
-                    '촬영',
-                    style: TextStyle(fontSize: 20),
-                  ),
-                ),
-                SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: _selectImageFromGallery,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[800],
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                  ),
-                  child: Text(
-                    '갤러리',
+                    'Camera',
                     style: TextStyle(fontSize: 20),
                   ),
                 ),

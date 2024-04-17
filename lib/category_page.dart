@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:ddundddun/photo_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CategoryPage extends StatefulWidget {
   final String category;
@@ -45,22 +46,31 @@ class _CategoryPageState extends State<CategoryPage> {
     );
   }
 
-  @override
+  Future<List<Map<String, dynamic>>> _getImageDataList(String category, String subCategory) async {
+    final querySnapshot = await FirebaseFirestore.instance
+      .collection('images')
+      .where('category', isEqualTo: category)
+      .where('subCategory', isEqualTo: subCategory)
+      .get();
+
+    return querySnapshot.docs.map((doc) => doc.data()).toList();
+  }
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.category} - ${widget.subCategory}'),
       ),
-      body: FutureBuilder<List<String>>(
-        future: _imageUrlsFuture,
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _getImageDataList(widget.category, widget.subCategory),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else {
-            final imageUrls = snapshot.data!;
-            if (imageUrls.isEmpty) {
+            final imageDataList = snapshot.data!;
+            if (imageDataList.isEmpty) {
               return Center(child: Text('해당 카테고리에 저장된 사진이 없습니다.'));
             }
             return GridView.builder(
@@ -71,9 +81,10 @@ class _CategoryPageState extends State<CategoryPage> {
                 childAspectRatio: 1,
               ),
               padding: EdgeInsets.all(8),
-              itemCount: imageUrls.length,
+              itemCount: imageDataList.length,
               itemBuilder: (context, index) {
-                final imageUrl = imageUrls[index];
+                final imageData = imageDataList[index];
+                final imageUrl = imageData['url'];
                 return GestureDetector(
                   onTap: () => _openPhotoPage(imageUrl),
                   child : ClipRRect(
