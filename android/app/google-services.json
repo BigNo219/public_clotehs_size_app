@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "25941560403",
+    "project_id": "unbutty-size-app",
+    "storage_bucket": "unbutty-size-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:25941560403:android:e93365fb130838c82b0aa6",
+        "android_client_info": {
+          "package_name": "com.example.clothes_size_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_4eYc9SKfHckx6Il7xSeLYJpzzzVZCAc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:25941560403:android:fefaae2e715f08252b0aa6",
+        "android_client_info": {
+          "package_name": "com.example.ddundddun"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_4eYc9SKfHckx6Il7xSeLYJpzzzVZCAc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
