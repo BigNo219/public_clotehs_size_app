@@ -37,11 +37,11 @@ class _CategoryPageState extends State<CategoryPage> {
     return response.resources.map((resource) => resource.secureUrl).toList();
   }
 
-  void _openPhotoPage(String imageUrl) {
+  void _openPhotoPage(String imageUrl, String category, String imageId) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PhotoPage(imageUrl: imageUrl),
+        builder: (context) => PhotoPage(imageUrl: imageUrl, category: category, imageId: imageId),
       ),
     );
   }
@@ -53,7 +53,12 @@ class _CategoryPageState extends State<CategoryPage> {
       .where('subCategory', isEqualTo: subCategory)
       .get();
 
-    return querySnapshot.docs.map((doc) => doc.data()).toList();
+    return querySnapshot.docs.map((doc) => {
+      'id': doc.id,
+      'url': doc.data()['url'],
+      'category': doc.data()['category'],
+      'subCategory': doc.data()['subCategory'],
+    }).toList().cast<Map<String, dynamic>>();
   }
     @override
   Widget build(BuildContext context) {
@@ -85,8 +90,10 @@ class _CategoryPageState extends State<CategoryPage> {
               itemBuilder: (context, index) {
                 final imageData = imageDataList[index];
                 final imageUrl = imageData['url'];
+                final imageId = imageData['id'];
+                final category = imageData['subCategory'];
                 return GestureDetector(
-                  onTap: () => _openPhotoPage(imageUrl),
+                  onTap: () => _openPhotoPage(imageUrl, category, imageId),
                   child : ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Image.network(
