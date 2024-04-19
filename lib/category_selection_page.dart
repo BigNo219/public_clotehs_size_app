@@ -92,7 +92,7 @@ class _CategorySelectionPageState extends State<CategorySelectionPage> {
 }
 
 final Map<String, List<String>> clothingCategories = {
-  '상의': ['맨투맨', '반팔티', '후드티', '니트', '가디건', '코트', '셔츠', '블라우스'],
-  '하의': ['바지', '롱치마', '숏치마', '멜빵바지', '레깅스', '스커트'],
+  '상의': ['맨투맨', '반팔티', '후드티', '니트', '나시', '셔츠', '블라우스', '코트'],
+  '하의': ['바지', '롱 치마', '숏 치마', '스커트'],
   '원피스': ['롱원피스', '숏원피스', '점프수트'],
 };
