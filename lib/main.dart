@@ -187,6 +187,7 @@ class _MyHomePageState extends State<MyHomePage> {
       'url' : imageUrl,
       'category' : category,
       'subCategory' : subCategory,
+      'timestamp' : FieldValue.serverTimestamp(),
     };
 
     await FirebaseFirestore.instance.collection('images').add(imageData);
