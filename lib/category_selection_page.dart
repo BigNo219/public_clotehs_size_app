@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 import 'package:ddundddun/category_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CategorySelectionPage extends StatefulWidget {
   final Function(String, String)? onCategorySelected;
@@ -25,21 +23,20 @@ class _CategorySelectionPageState extends State<CategorySelectionPage> {
 
   // 카테고리별 파일 개수 세기
   Future<void> _countFilesInCategories() async {
-    final appDir = await getApplicationDocumentsDirectory();
     Map<String, Map<String, int>> tempCounts = {};
 
     for (var category in clothingCategories.keys) {
       Map<String, int> subCategoryCounts = {};
+      final categoryQuery = FirebaseFirestore.instance
+          .collection('images')
+          .where('category', isEqualTo: category);
+
       for (var subCategory in clothingCategories[category]!) {
-        final subCategoryDir = Directory(path.join(appDir.path, category, subCategory));
-        int fileCount = 0;
-
-        if (await subCategoryDir.exists()) {
-          fileCount = await subCategoryDir.list().where((item) => item is File).length;
-        }
-
-        subCategoryCounts[subCategory] = fileCount;
+        final subcategoryQuery = categoryQuery.where('subCategory', isEqualTo: subCategory);
+        final subcategorySnapshots = await subcategoryQuery.get();
+        subCategoryCounts[subCategory] = subcategorySnapshots.docs.length;
       }
+
       tempCounts[category] = subCategoryCounts;
     }
 
@@ -56,16 +53,20 @@ class _CategorySelectionPageState extends State<CategorySelectionPage> {
         final category = clothingCategories.keys.elementAt(index);
         final subCategories = clothingCategories[category]!;
         return Card(
+          color: Colors.black,
           elevation: 2,
           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: ExpansionTile(
             title: Text(
-              '$category (${fileCounts[category]?.values.fold(0, (sum, item) => sum + item) ?? 0} 개)',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              '$category  (${fileCounts[category]?.values.fold(0, (sum, item) => sum + item) ?? 0})',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             children: subCategories.map((subCategory) {
               return ListTile(
-                title: Text('$subCategory (${fileCounts[category]?[subCategory] ?? 0} 개)'),
+                title: Text(
+                  '      - $subCategory  (${fileCounts[category]?[subCategory] ?? 0})',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
                 onTap: () {
                   if (widget.onCategorySelected != null) {
                     widget.onCategorySelected!(category, subCategory);
