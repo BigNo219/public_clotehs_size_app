@@ -1,13 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:ddundddun/category_selection_page.dart';
-import 'package:ddundddun/delete_selection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ddundddun/recent_photos_page.dart';
 
 
 void main() async{
@@ -41,7 +39,11 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+        length: 3,
+        vsync: this,
+        initialIndex: 1,
+    );
     _requestPermission();
   }
 
@@ -219,13 +221,34 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
             fontSize: 24,
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: 'Recent'),
-            Tab(text: 'Home'),
-            Tab(text: 'Categories'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(kToolbarHeight),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: TabBar(
+              indicatorColor: Colors.black,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.grey,
+              labelStyle: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              unselectedLabelStyle: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              controller: _tabController,
+              tabs: [
+                Tab(text: 'Recent'),
+                Tab(text: 'Home'),
+                Tab(text: 'Categories'),
+              ],
+            ),
+          ),
         ),
       ),
       body: TabBarView(
