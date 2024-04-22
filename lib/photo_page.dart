@@ -166,18 +166,18 @@ class _PhotoPageState extends State<PhotoPage> {
                 ),
                 Padding(
                   padding: EdgeInsets.all(16.0),
-                    child: TextField(
-                      controller: _controllers['description'],
-                      decoration: InputDecoration(
-                        labelText: '추가 정보',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
-                      ),
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                      style: TextStyle(height: 1.0),
+                  child: TextField(
+                    controller: _controllers['description'],
+                    decoration: InputDecoration(
+                      labelText: '추가 정보',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
                     ),
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    style: TextStyle(height: 1.0),
                   ),
+                ),
                 ...categoryForms[widget.category]!.map((field) => Padding(
                   padding: EdgeInsets.all(16.0),
                   child: TextField(
