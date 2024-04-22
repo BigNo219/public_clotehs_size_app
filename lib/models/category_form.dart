@@ -1,3 +1,13 @@
+const categoryTitles = {
+  Lining: '안감',
+  Elasticity: '신축성',
+  Transparency: '비침',
+  ClothingTexture: '촉감',
+  Fit: '핏감',
+  Thickness: '두께감',
+  Season: '계절감',
+};
+
 enum Lining { yes, no, fleece }
 enum Elasticity { good, normal, none }
 enum Transparency { none, slight, yes }
