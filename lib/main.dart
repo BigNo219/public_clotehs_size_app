@@ -12,7 +12,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp();
   runApp(MyApp());
 }
@@ -36,19 +35,27 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _requestPermission();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   final clothingCategories = {
     '상의': ['맨투맨', '반팔티', '후드티', '니트', '나시', '셔츠', '블라우스', '코트'],
     '하의': ['바지', '롱 치마', '숏 치마', '스커트'],
     '원피스': ['롱원피스', '숏원피스', '점프수트'],
   };
-
-  @override
-  void initState() {
-    super.initState();
-    _requestPermission();
-  }
 
   // 카메라 및 사진, 저장소 접근 권한 요청
   Future<void> _requestPermission() async {
@@ -199,32 +206,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // 앱 용량 계산
-  Future<String> _calculateAppSize() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final appSize = await _getTotalSizeOfFilesInDir(appDir);
-    final sizeInMB = (appSize / (1024 * 1024)).toStringAsFixed(2);
-    return '$sizeInMB MB';
-  }
-
-  // 디렉토리 용량 계산
-  Future<int> _getTotalSizeOfFilesInDir(final FileSystemEntity file) async {
-    if (file is File) {
-      final fileStat = await file.stat();
-      return fileStat.size;
-    }
-    if (file is Directory) {
-      final children = file.listSync();
-      int total = 0;
-      for (final FileSystemEntity child in children) {
-        total += await _getTotalSizeOfFilesInDir(child);
-      }
-      return total;
-    }
-    return 0;
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -238,28 +219,28 @@ class _MyHomePageState extends State<MyHomePage> {
             fontSize: 24,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.delete, color: Colors.grey),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => DeleteSelectionPage()),
-              );
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.photo_library, color: Colors.grey[600]),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CategorySelectionPage()),
-              );
-            },
-          ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: 'Recent'),
+            Tab(text: 'Home'),
+            Tab(text: 'Categories'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          RecentPhotosPage(),
+          _buildHomeTab(),
+          CategorySelectionPage(),
         ],
       ),
-      body: Center(
+    );
+  }
+
+  Widget _buildHomeTab() {
+    return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -305,25 +286,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ],
             ),
-            SizedBox(height: 20),
-            FutureBuilder<String>(
-              future: _calculateAppSize(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else {
-                  return Text(
-                    '앱 용량: ${snapshot.data}',
-                    style: TextStyle(fontSize: 16),
-                  );
-                }
-              },
-            ),
           ],
         ),
-      ),
     );
   }
 }
