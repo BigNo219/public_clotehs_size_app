@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ddundddun/category_page.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ddundddun/page/category_page.dart';
+import 'package:ddundddun/functions/refresh_count_file_categories.dart';
 
 class CategorySelectionPage extends StatefulWidget {
   final Function(String, String)? onCategorySelected;
@@ -13,36 +13,12 @@ class CategorySelectionPage extends StatefulWidget {
 }
 
 class _CategorySelectionPageState extends State<CategorySelectionPage> {
-  Map<String, Map<String, int>> fileCounts = {};
+  final RefreshCountFileCategories _refreshCountFileCategories = RefreshCountFileCategories();
 
   @override
   void initState() {
     super.initState();
-    _countFilesInCategories();
-  }
-
-  // 카테고리별 파일 개수 세기
-  Future<void> _countFilesInCategories() async {
-    Map<String, Map<String, int>> tempCounts = {};
-
-    for (var category in clothingCategories.keys) {
-      Map<String, int> subCategoryCounts = {};
-      final categoryQuery = FirebaseFirestore.instance
-          .collection('images')
-          .where('category', isEqualTo: category);
-
-      for (var subCategory in clothingCategories[category]!) {
-        final subcategoryQuery = categoryQuery.where('subCategory', isEqualTo: subCategory);
-        final subcategorySnapshots = await subcategoryQuery.get();
-        subCategoryCounts[subCategory] = subcategorySnapshots.docs.length;
-      }
-
-      tempCounts[category] = subCategoryCounts;
-    }
-
-    setState(() {
-      fileCounts = tempCounts;
-    });
+    _refreshCountFileCategories.countFilesInCategories(clothingCategories);
   }
 
   @override
@@ -58,13 +34,13 @@ class _CategorySelectionPageState extends State<CategorySelectionPage> {
           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: ExpansionTile(
             title: Text(
-              '$category  (${fileCounts[category]?.values.fold(0, (sum, item) => sum + item) ?? 0})',
+              '$category  (${_refreshCountFileCategories.fileCounts[category]?.values.fold(0, (sum, item) => sum + item) ?? 0})',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             children: subCategories.map((subCategory) {
               return ListTile(
                 title: Text(
-                  '      - $subCategory  (${fileCounts[category]?[subCategory] ?? 0})',
+                  '      - $subCategory  (${_refreshCountFileCategories.fileCounts[category]?[subCategory] ?? 0})',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 onTap: () {
@@ -78,7 +54,7 @@ class _CategorySelectionPageState extends State<CategorySelectionPage> {
                       ),
                     ).then ((result) {
                       if (result != null && result) {
-                        _countFilesInCategories();
+                        _refreshCountFileCategories.countFilesInCategories(clothingCategories);
                       }
                     });
                   }
