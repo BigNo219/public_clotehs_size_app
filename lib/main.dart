@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:ddundddun/category_selection_page.dart';
+import 'package:ddundddun/page/category_selection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:ddundddun/recent_photos_page.dart';
-
+import 'package:ddundddun/page/recent_photos_page.dart';
+import 'package:ddundddun/functions/refresh_count_file_categories.dart';
+import 'package:ddundddun/functions/delete_weekend_page.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+
+  final _countFileCategories = RefreshCountFileCategories(); // 카테고리 파일 개수 새로고침
 
   @override
   void initState() {
@@ -221,6 +224,27 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
             fontSize: 24,
           ),
         ),
+        actions:[
+          IconButton(
+            icon: Icon(Icons.delete, color: Colors.black),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DeleteSelectionPage(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.refresh, color: Colors.black),
+            onPressed: () {
+              setState(() {
+                _countFileCategories.countFilesInCategories(clothingCategories); // 카테고리 파일 개수 새로고침
+              });
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(kToolbarHeight),
           child: Container(
@@ -229,7 +253,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
               borderRadius: BorderRadius.circular(20),
             ),
             child: TabBar(
-              indicatorColor: Colors.black,
+              indicatorColor: Colors.black38,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.grey,
               labelStyle: TextStyle(
