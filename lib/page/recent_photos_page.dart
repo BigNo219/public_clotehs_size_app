@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:ddundddun/photo_page.dart';
+import 'package:ddundddun/page/photo_page.dart';
 
 class RecentPhotosPage extends StatelessWidget {
   @override
