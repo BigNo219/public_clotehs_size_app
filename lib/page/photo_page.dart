@@ -43,50 +43,31 @@ class _PhotoPageState extends State<PhotoPage> {
 
     if (data != null) {
       _controllers = {
-        'title': TextEditingController(text: data['title']?.toString() ?? ''),
-        'description': TextEditingController(text: data['description']?.toString() ?? ''),
-        for (var field in categoryForms[widget.category]!)
-          if (data[field] != null) field: TextEditingController(text: data[field].toString()),
+        'title': TextEditingController(text: data['title'] ?? ''),
+        'description': TextEditingController(text: data['description'] ?? ''),
       };
 
-      final liningValue = Lining.values.byName(data['lining']);
-      if (liningValue != null) {
-        _selectedLining = liningValue;
+      final fields = categoryForms[widget.category];
+      if (fields != null) {
+        for (var field in fields) {
+          _controllers[field] = TextEditingController(text: data[field]?.toString() ?? '');
+        }
       }
 
-      final elasticityValue = Elasticity.values.byName(data['elasticity']);
-      if (elasticityValue != null) {
-        _selectedElasticity = elasticityValue;
-      }
-
-      final transparencyValue = Transparency.values.byName(data['transparency']);
-      if (transparencyValue != null) {
-        _selectedTransparency = transparencyValue;
-      }
-
-      final textureValue = ClothingTexture.values.byName(data['texture']);
-      if (textureValue != null) {
-        _selectedClothingTexture = textureValue;
-      }
-
-      final fitValue = Fit.values.byName(data['fit']);
-      if (fitValue != null) {
-        _selectedFit = fitValue;
-      }
-
-      final thicknessValue = Thickness.values.byName(data['thickness']);
-      if (thicknessValue != null) {
-        _selectedThickness = thicknessValue;
-      }
-
-      final seasonValue = Season.values.byName(data['season']);
-      if (seasonValue != null) {
-        _selectedSeason = seasonValue;
-      }
+      _selectedLining = data['lining'] != null ? Lining.values.byName(data['lining']) : null;
+      _selectedElasticity = data['elasticity'] != null ? Elasticity.values.byName(data['elasticity']) : null;
+      _selectedTransparency = data['transparency'] != null ? Transparency.values.byName(data['transparency']) : null;
+      _selectedClothingTexture = data['texture'] != null ? ClothingTexture.values.byName(data['texture']) : null;
+      _selectedFit = data['fit'] != null ? Fit.values.byName(data['fit']) : null;
+      _selectedThickness = data['thickness'] != null ? Thickness.values.byName(data['thickness']) : null;
+      _selectedSeason = data['season'] != null ? Season.values.byName(data['season']) : null;
     } else {
-      _controllers = {
-        for (var field in categoryForms[widget.category]!) field: TextEditingController(),
-      };
+      final fields = categoryForms[widget.category];
+      if (fields != null) {
+        _controllers = {
+          for (var field in fields) field: TextEditingController(),
+        };
+      }
     }
 
     setState(() {
@@ -95,14 +76,13 @@ class _PhotoPageState extends State<PhotoPage> {
   }
 
   Future<void> _saveDetails() async {
-    final fields = categoryForms[widget.category];
-    if (fields == null) {
-      return;
-    }
+    final fields = categoryForms[widget.category] ?? [];
+
     final data = {
       'title': _controllers['title']!.text,
       'description': _controllers['description']!.text,
-      for (var field in categoryForms[widget.category]!) field: int.parse(_controllers[field]!.text),
+      for (var field in fields)
+        field: _controllers[field]?.text.isNotEmpty == true ? int.parse(_controllers[field]!.text) : null,
       'lining': _selectedLining?.toString().split('.').last ?? '',
       'elasticity': _selectedElasticity?.toString().split('.').last ?? '',
       'transparency': _selectedTransparency?.toString().split('.').last ?? '',
@@ -115,7 +95,7 @@ class _PhotoPageState extends State<PhotoPage> {
     await FirebaseFirestore.instance.collection('images').doc(widget.imageId).update(data);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('정보 저장 완료.')),
+      SnackBar(content: Text('사이즈 및 상세내용이 저장되었습니다.')),
     );
   }
 
@@ -136,12 +116,12 @@ class _PhotoPageState extends State<PhotoPage> {
 
           final imageData = snapshot.data!.data() as Map<String, dynamic>;
           final imageUrl = imageData['url'] as String;
+
           final fields = categoryForms[widget.category];
 
           if (fields == null) {
             return Center(child: Text('해당 카테고리에 대한 정보가 없습니다.'));
           }
-
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
