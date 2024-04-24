@@ -59,7 +59,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
   final clothingCategories = {
     '상의': ['맨투맨', '반팔티', '후드티', '니트', '나시', '셔츠', '블라우스', '코트'],
     '하의': ['바지', '롱 치마', '숏 치마', '스커트'],
-    '원피스': ['롱원피스', '숏원피스', '점프수트'],
+    '원피스': ['롱 원피스', '숏 원피스', '점프수트'],
   };
 
   // 카메라 및 사진, 저장소 접근 권한 요청
