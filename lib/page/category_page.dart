@@ -90,7 +90,7 @@ class _CategoryPageState extends State<CategoryPage> {
       context: context,
       builder: (context) =>
           AlertDialog(
-            title: Text('이미지 삭제'),
+            title: Text('사진 삭제'),
             content: Text('선택한 이미지를 삭제하시겠습니까?'),
             actions: [
               TextButton(
@@ -112,47 +112,34 @@ class _CategoryPageState extends State<CategoryPage> {
 
       for (final imageId in _selectedImageIds) {
         final doc = await FirebaseFirestore.instance.collection('images').doc(imageId).get();
-        final data = doc.data();
-        String url = data?['url'] ?? '';
+        final url = doc.data()?['url'] as String? ?? '';
 
         if (url.isNotEmpty) {
           final parts = url.split('/');
-          final fileName = parts.last.split('.').first;  // Assuming the file extension and other parameters are correctly stripped
+          final fileName = parts.last.split('.').first;
           final folderPathParts = parts.sublist(7, parts.length - 1);
-          final encodedFileName = Uri.encodeComponent(fileName);
-          final encodedPublicId = folderPathParts.join('/') + '/' + encodedFileName;
           final decodedPathParts = folderPathParts.map(Uri.decodeComponent).toList();
-          final realPublicId = decodedPathParts.join('/') + '/' + fileName;
+          final publicId = decodedPathParts.join('/') + '/' + fileName;
 
-          print ('decodePathParts : $decodedPathParts');
-          print ('realPublicId : $realPublicId');
           final timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round();
 
           final params = {
-            'public_id': realPublicId,
+            'public_id': publicId,
             'timestamp': timestamp.toString(),
           };
 
-          final sortedParams = Map.fromEntries(params.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
-          final paramString = sortedParams.entries
+          final paramString = params.entries
               .map((entry) => '${entry.key}=${entry.value}')
               .join('&');
 
-          final signatureString = '$paramString$apiSecret';
-          print('signatureString : $signatureString');
-
-          final signature = sha256.convert(utf8.encode(signatureString)).toString();
-          print('signature : $signature');
-
-          final deleteUrl = 'https://api.cloudinary.com/v1_1/$cloudName/image/destroy';
+          final signature = sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
 
           final response = await http.post(
-            Uri.parse(deleteUrl),
+            Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/destroy'),
             body: {
-              'public_id': realPublicId,
+              ...params,
               'signature': signature,
               'api_key': apiKey,
-              'timestamp': params['timestamp'],
             },
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded'
@@ -166,7 +153,7 @@ class _CategoryPageState extends State<CategoryPage> {
             await FirebaseFirestore.instance.collection('images').doc(imageId).delete();
             print("이미지 삭제 완료. ID: $imageId");
           } else {
-            print('Failed to delete image from Cloudinary., Status code: ${response.statusCode}');
+            print('Failed to delete image from Cloudinary. Status code: ${response.statusCode}');
           }
         } else {
           print('URL is empty for image ID: $imageId');
