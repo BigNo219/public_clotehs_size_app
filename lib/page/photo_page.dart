@@ -127,8 +127,8 @@ class _PhotoPageState extends State<PhotoPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Container(
-                  width: 400.0,
-                  height: 400.0,
+                  width: 300.0,
+                  height: 300.0,
                   child: Image.network(
                     imageUrl,
                     fit: BoxFit.cover,
@@ -140,6 +140,10 @@ class _PhotoPageState extends State<PhotoPage> {
                     controller: _controllers['title'],
                     decoration: InputDecoration(
                       labelText: '제목',
+                      labelStyle: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -150,6 +154,10 @@ class _PhotoPageState extends State<PhotoPage> {
                     controller: _controllers['description'],
                     decoration: InputDecoration(
                       labelText: '추가 정보',
+                      labelStyle: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                       border: OutlineInputBorder(),
                       contentPadding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
                     ),
@@ -164,6 +172,10 @@ class _PhotoPageState extends State<PhotoPage> {
                     controller: _controllers[field],
                     decoration: InputDecoration(
                       labelText: field,
+                      labelStyle: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
