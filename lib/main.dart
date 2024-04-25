@@ -66,9 +66,11 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
   Future<void> _requestPermission() async {
     final status = await [
       Permission.camera,
+      Permission.photos,
     ].request();
 
-    if (status[Permission.camera]!.isDenied ) {
+    if (status[Permission.camera]!.isDenied ||
+        status[Permission.photos]!.isDenied) {
       // 권한이 거부되면 추가적인 안내를 제공
       showDialog(
         context: context,

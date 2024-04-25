@@ -36,6 +36,23 @@ dev_dependencies:
 
   flutter_lints: ^3.0.0
 
+# iOS 관련 설정
+ios:
+  build:
+    targets:
+      - lib/main.dart
+  bundle_name: ddundddun
+  bundle_display_name: ddundddun
+  bundle_identifier: com.unbutty.ddundddun
+  bundle_version: 1.0.0+1
+  bundle_build_number: 1
+  include_bitcode: true
+  export_options_plist:
+    method: app-store
+  resources:
+    - assets/logo.png
+    - assets/logo2.png
+
 flutter:
 
   uses-material-design: true

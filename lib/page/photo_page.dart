@@ -27,6 +27,8 @@ class _PhotoPageState extends State<PhotoPage> {
   Season? _selectedSeason;
   bool _isLoading = false;
 
+  final _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +46,7 @@ class _PhotoPageState extends State<PhotoPage> {
     if (data != null) {
       _controllers = {
         'title': TextEditingController(text: data['title'] ?? ''),
+        'customerName': TextEditingController(text: data['customerName'] ?? ''),
         'description': TextEditingController(text: data['description'] ?? ''),
       };
 
@@ -80,6 +83,7 @@ class _PhotoPageState extends State<PhotoPage> {
 
     final data = {
       'title': _controllers['title']!.text,
+      'customerName': _controllers['customerName']!.text,
       'description': _controllers['description']!.text,
       for (var field in fields)
         field: _controllers[field]?.text.isNotEmpty == true ? int.parse(_controllers[field]!.text) : null,
@@ -123,6 +127,7 @@ class _PhotoPageState extends State<PhotoPage> {
             return Center(child: Text('해당 카테고리에 대한 정보가 없습니다.'));
           }
           return SingleChildScrollView(
+            controller: _scrollController,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -134,284 +139,31 @@ class _PhotoPageState extends State<PhotoPage> {
                     fit: BoxFit.cover,
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: TextField(
-                    controller: _controllers['title'],
-                    decoration: InputDecoration(
-                      labelText: '제목',
-                      labelStyle: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: TextField(
-                    controller: _controllers['description'],
-                    decoration: InputDecoration(
-                      labelText: '추가 정보',
-                      labelStyle: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
-                    ),
-                    maxLines: null,
-                    keyboardType: TextInputType.multiline,
-                    style: TextStyle(height: 1.0),
-                  ),
-                ),
-                ...categoryForms[widget.category]!.map((field) => Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: TextField(
-                    controller: _controllers[field],
-                    decoration: InputDecoration(
-                      labelText: field,
-                      labelStyle: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                )).toList(),
-                Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '안감',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8.0),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: Lining.values.map((lining) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Radio<Lining>(
-                              value: lining,
-                              groupValue: _selectedLining,
-                              onChanged: (value) => setState(() => _selectedLining = value),
-                            ),
-                            Text(liningLabels[lining]!),
-                          ],
-                        )).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '신축성',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8.0),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: Elasticity.values.map((elasticity) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Radio<Elasticity>(
-                              value: elasticity,
-                              groupValue: _selectedElasticity,
-                              onChanged: (value) => setState(() => _selectedElasticity = value),
-                            ),
-                            Text(elasticityLabels[elasticity]!),
-                          ],
-                        )).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '비침',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8.0),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: Transparency.values.map((transparency) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Radio<Transparency>(
-                              value: transparency,
-                              groupValue: _selectedTransparency,
-                              onChanged: (value) => setState(() => _selectedTransparency = value),
-                            ),
-                            Text(transparencyLabels[transparency]!),
-                          ],
-                        )).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '촉감',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8.0),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: ClothingTexture.values.map((texture) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Radio<ClothingTexture>(
-                              value: texture,
-                              groupValue: _selectedClothingTexture,
-                              onChanged: (value) => setState(() => _selectedClothingTexture = value),
-                            ),
-                            Text(textureLabels[texture]!),
-                          ],
-                        )).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '핏감',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8.0),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: Fit.values.map((fit) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Radio<Fit>(
-                              value: fit,
-                              groupValue: _selectedFit,
-                              onChanged: (value) => setState(() => _selectedFit = value),
-                            ),
-                            Text(fitLabels[fit]!),
-                          ],
-                        )).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '두께감',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8.0),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: Thickness.values.map((thickness) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Radio<Thickness>(
-                              value: thickness,
-                              groupValue: _selectedThickness,
-                              onChanged: (value) => setState(() => _selectedThickness = value),
-                            ),
-                            Text(thicknessLabels[thickness]!),
-                          ],
-                        )).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '계절감',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8.0),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: Season.values.map((season) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Radio<Season>(
-                              value: season,
-                              groupValue: _selectedSeason,
-                              onChanged: (value) => setState(() => _selectedSeason = value),
-                            ),
-                            Text(seasonLabels[season]!),
-                          ],
-                        )).toList(),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildTextField('title', '제목'),
+                _buildTextField('customerName', '거래처 명'),
+                _buildMultilineTextField('description', '추가 정보'),
+                ...categoryForms[widget.category]!.map((field) => _buildTextField(field, field)).toList(),
+                _buildRadioGroup<Lining>('안감', Lining.values, liningLabels, _selectedLining, (value) => _selectedLining = value),
+                _buildRadioGroup<Elasticity>('신축성', Elasticity.values, elasticityLabels, _selectedElasticity, (value) => _selectedElasticity = value),
+                _buildRadioGroup<Transparency>('비침', Transparency.values, transparencyLabels, _selectedTransparency, (value) => _selectedTransparency = value),
+                _buildRadioGroup<ClothingTexture>('촉감', ClothingTexture.values, textureLabels, _selectedClothingTexture, (value) => _selectedClothingTexture = value),
+                _buildRadioGroup<Fit>('핏감', Fit.values, fitLabels, _selectedFit, (value) => _selectedFit = value),
+                _buildRadioGroup<Thickness>('두께감', Thickness.values, thicknessLabels, _selectedThickness, (value) => _selectedThickness = value),
+                _buildRadioGroup<Season>('계절감', Season.values, seasonLabels, _selectedSeason, (value) => _selectedSeason = value),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton(
                     onPressed: _saveDetails,
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.black87),  // 배경색 설정
-                      foregroundColor: MaterialStateProperty.all(Colors.white),  // 텍스트 및 아이콘 색상 설정
-                      shape: MaterialStateProperty.all(  // 버튼 모양 설정
+                      backgroundColor: MaterialStateProperty.all(Colors.black87),
+                      foregroundColor: MaterialStateProperty.all(Colors.white),
+                      shape: MaterialStateProperty.all(
                         RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20.0),  // 모서리 둥글기 설정
+                          borderRadius: BorderRadius.circular(20.0),
                         ),
                       ),
-                      elevation: MaterialStateProperty.all(8.0),  // 그림자 높이 설정
-                      padding: MaterialStateProperty.all(  // 내부 여백 설정
+                      elevation: MaterialStateProperty.all(8.0),
+                      padding: MaterialStateProperty.all(
                         EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
                       ),
                     ),
@@ -426,8 +178,95 @@ class _PhotoPageState extends State<PhotoPage> {
     );
   }
 
+  Widget _buildTextField(String field, String label) {
+    return Padding(
+      padding: EdgeInsets.all(16.0),
+      child: TextField(
+        controller: _controllers[field],
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          border: OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMultilineTextField(String field, String label) {
+    return Padding(
+      padding: EdgeInsets.all(16.0),
+      child: TextField(
+        controller: _controllers[field],
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+        ),
+        maxLines: null,
+        keyboardType: TextInputType.multiline,
+        style: TextStyle(height: 1.0),
+      ),
+    );
+  }
+
+  Widget _buildRadioGroup<T>(
+      String title,
+      List<T> values,
+      Map<T, String> labels,
+      T? selectedValue,
+      void Function(T?) onChanged,
+      ) {
+    return Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16.0,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8.0),
+          Wrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
+            children: values.map((value) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Radio<T>(
+                  value: value,
+                  groupValue: selectedValue,
+                  onChanged: (value) {
+                    final currentScrollPosition = _scrollController.position.pixels;
+                    setState(() => onChanged(value));
+                    _scrollController.animateTo(
+                      currentScrollPosition,
+                      duration: Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                ),
+                Text(labels[value]!),
+              ],
+            )).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _scrollController.dispose();
     _controllers.values.forEach((controller) => controller.dispose());
     super.dispose();
   }
