@@ -29,6 +29,7 @@ dependencies:
   cloud_firestore: ^4.17.0
   firebase_auth: ^4.19.2
   provider: ^6.1.2
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -43,7 +44,7 @@ ios:
       - lib/main.dart
   bundle_name: ddundddun
   bundle_display_name: ddundddun
-  bundle_identifier: com.unbutty.ddundddun
+  bundle_identifier: com.example.ddundddun
   bundle_version: 1.0.0+1
   bundle_build_number: 1
   include_bitcode: true
