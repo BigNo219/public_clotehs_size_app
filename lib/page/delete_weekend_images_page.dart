@@ -3,28 +3,96 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../main.dart';
 
-class DeleteImagesPage extends StatefulWidget {
+class DeleteImagesPage extends StatelessWidget {
   final String option;
 
   DeleteImagesPage({required this.option});
 
   @override
-  _DeleteImagesPageState createState() => _DeleteImagesPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => DeleteImagesPageModel(option),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('사진 삭제'),
+        ),
+        body: Consumer<DeleteImagesPageModel>(
+          builder: (context, model, child) {
+            if (model.imagesForDeletion.isEmpty) {
+              return Center(child: CircularProgressIndicator());
+            } else {
+              return GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8.0,
+                  mainAxisSpacing: 8.0,
+                ),
+                itemCount: model.imagesForDeletion.length,
+                itemBuilder: (context, index) {
+                  final imageData =
+                  model.imagesForDeletion[index].data() as Map<String, dynamic>;
+                  final imageUrl = imageData['url'] as String;
+                  return Stack(
+                    children: [
+                      CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            Center(child: CircularProgressIndicator()),
+                        errorWidget: (context, url, error) => Icon(Icons.error),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: () {
+                            model.toggleImageSelection(index);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                            child: model.selectedImages[index]
+                                ? Icon(Icons.check_circle, color: Colors.blue)
+                                : Icon(Icons.radio_button_unchecked),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            }
+          },
+        ),
+        floatingActionButton: Consumer<DeleteImagesPageModel>(
+          builder: (context, model, child) => FloatingActionButton(
+            onPressed: model.deleteImages,
+            child: Icon(Icons.delete),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _DeleteImagesPageState extends State<DeleteImagesPage> {
+class DeleteImagesPageModel extends ChangeNotifier {
+  final String option;
   List<QueryDocumentSnapshot> imagesForDeletion = [];
   List<bool> selectedImages = [];
 
-  @override
-  void initState() {
-    super.initState();
+  DeleteImagesPageModel(this.option) {
     _fetchImagesToDelete();
   }
 
   Future<void> _fetchImagesToDelete() async {
-    final daysAgo = int.parse(widget.option.split('주일')[0]);
+    final daysAgo = int.parse(option.split('주일')[0]);
     final now = DateTime.now();
     final deleteBefore = now.subtract(Duration(days: daysAgo * 7));
 
@@ -33,15 +101,19 @@ class _DeleteImagesPageState extends State<DeleteImagesPage> {
         .where('timestamp', isLessThan: deleteBefore);
 
     final querySnapshot = await query.get();
-    setState(() {
-      imagesForDeletion = querySnapshot.docs;
-      selectedImages = List<bool>.filled(imagesForDeletion.length, true);
-    });
+    imagesForDeletion = querySnapshot.docs;
+    selectedImages = List<bool>.filled(imagesForDeletion.length, true);
+    notifyListeners();
   }
 
-  Future<void> _deleteImages() async {
+  void toggleImageSelection(int index) {
+    selectedImages[index] = !selectedImages[index];
+    notifyListeners();
+  }
+
+  Future<void> deleteImages() async {
     final confirm = await showDialog(
-      context: context,
+      context: navigatorKey.currentContext!,
       builder: (context) => AlertDialog(
         title: Text('사진 삭제'),
         content: Text('선택한 이미지를 삭제하시겠습니까?'),
@@ -59,9 +131,11 @@ class _DeleteImagesPageState extends State<DeleteImagesPage> {
     );
 
     if (confirm == true) {
-      final apiKey = "491384474792879";
-      final apiSecret = "hE8xMCTm7R8q8mf0K_MrlguymiU";
-      final cloudName = "duqykedvy";
+      final apiKey = dotenv.env['API_KEY']!;
+      final apiSecret = dotenv.env['API_SECRET']!;
+      final cloudName = dotenv.env['CLOUD_NAME']!;
+      final cloudinaryUrl = dotenv.env['CLOUDINARY_URL']!;
+      final cloudinaryEndpoint = dotenv.env['CLOUDINARY_URL_ENDPOINT']!;
 
       for (int i = 0; i < imagesForDeletion.length; i++) {
         if (selectedImages[i]) {
@@ -89,13 +163,11 @@ class _DeleteImagesPageState extends State<DeleteImagesPage> {
                 .map((entry) => '${entry.key}=${entry.value}')
                 .join('&');
 
-            final signature = sha256
-                .convert(utf8.encode('$paramString$apiSecret'))
-                .toString();
+            final signature =
+            sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
 
             final response = await http.post(
-              Uri.parse(
-                  'https://api.cloudinary.com/v1_1/$cloudName/image/destroy'),
+              Uri.parse('$cloudinaryUrl$cloudName$cloudinaryEndpoint'),
               body: {
                 ...params,
                 'signature': signature,
@@ -104,81 +176,20 @@ class _DeleteImagesPageState extends State<DeleteImagesPage> {
               headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             );
 
-            print("Response Status Code: ${response.statusCode}");
-            print("Response Body: ${response.body}");
-
             if (response.statusCode == 200) {
               await FirebaseFirestore.instance
                   .collection('images')
                   .doc(imageId)
                   .delete();
-              print("이미지 삭제 완료. ID: $imageId");
             } else {
               print(
                   'Failed to delete image from Cloudinary. Status code: ${response.statusCode}');
             }
-          } else {
-            print('URL is empty for image ID: $imageId');
           }
         }
       }
 
-      setState(() {
-        _fetchImagesToDelete();
-      });
+      _fetchImagesToDelete();
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('사진 삭제'),
-      ),
-      body: imagesForDeletion.isEmpty
-          ? Center(child: CircularProgressIndicator())
-          : GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 8.0,
-          mainAxisSpacing: 8.0,
-        ),
-        itemCount: imagesForDeletion.length,
-        itemBuilder: (context, index) {
-          final imageData =
-          imagesForDeletion[index].data() as Map<String, dynamic>;
-          final imageUrl = imageData['url'] as String;
-          return Stack(
-            children: [
-              Image.network(imageUrl, fit: BoxFit.cover),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedImages[index] = !selectedImages[index];
-                    });
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    child: selectedImages[index]
-                        ? Icon(Icons.check_circle, color: Colors.blue)
-                        : Icon(Icons.radio_button_unchecked),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _deleteImages,
-        child: Icon(Icons.delete),
-      ),
-    );
   }
 }

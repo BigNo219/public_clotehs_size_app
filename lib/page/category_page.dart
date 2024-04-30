@@ -5,46 +5,96 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../main.dart';
 
-
-
-class CategoryPage extends StatefulWidget {
+class CategoryPage extends StatelessWidget {
   final String category;
   final String subCategory;
 
   CategoryPage({required this.category, required this.subCategory});
 
   @override
-  _CategoryPageState createState() => _CategoryPageState();
-}
-
-class _CategoryPageState extends State<CategoryPage> {
-  late Future<List<String>> _imageUrlsFuture;
-  bool _isSelectionMode = false;
-  final Set<String> _selectedImageIds = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _imageUrlsFuture = _getImageUrls();
-  }
-
-  Future<List<String>> _getImageUrls() async {
-    final cloudinary = CloudinaryPublic(
-        'duqykedvy',
-        'flutter_clotehs_size_app',
-        apiKey: '491384474792879',
-        apiSecret: 'hE8xMCTm7R8q8mf0K_MrlguymiU',
-        cache: false);
-    final response = await cloudinary.searchResources(
-      expression: 'folder:${widget.category}/${widget.subCategory}',
-      maxResults: 100,
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => CategoryPageModel(category, subCategory),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('$category - $subCategory'),
+          actions: [
+            Consumer<CategoryPageModel>(
+              builder: (context, model, child) => IconButton(
+                icon: Icon(Icons.delete, color: Colors.black),
+                onPressed: model.isSelectionMode ? model.deleteImages : model.toggleSelectionMode,
+              ),
+            ),
+          ],
+        ),
+        body: Consumer<CategoryPageModel>(
+          builder: (context, model, child) {
+            if (model.isLoading) {
+              return Center(child: CircularProgressIndicator());
+            } else if (model.hasError) {
+              return Center(child: Text('Error: ${model.errorMessage}'));
+            } else {
+              final imageDataList = model.imageDataList;
+              if (imageDataList.isEmpty) {
+                return Center(child: Text('해당 카테고리에 저장된 사진이 없습니다.'));
+              }
+              return GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1,
+                ),
+                padding: EdgeInsets.all(8),
+                itemCount: imageDataList.length,
+                itemBuilder: (context, index) {
+                  final imageData = imageDataList[index];
+                  final imageUrl = imageData['url'];
+                  final imageId = imageData['id'];
+                  final category = imageData['subCategory'];
+                  final isSelected = model.isImageSelected(imageId);
+                  return GestureDetector(
+                    onTap: model.isSelectionMode
+                        ? () => model.selectImage(imageId)
+                        : () => _openPhotoPage(context, imageUrl, category, imageId),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                            errorWidget: (context, url, error) => Icon(Icons.error),
+                          ),
+                        ),
+                        if (model.isSelectionMode)
+                          Positioned(
+                            top: 5,
+                            right: 5,
+                            child: Icon(
+                              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                              color: isSelected ? Colors.green : Colors.white,
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            }
+          },
+        ),
+      ),
     );
-
-    return response.resources.map((resource) => resource.secureUrl).toList();
   }
 
-  void _openPhotoPage(String imageUrl, String category, String imageId) {
+  void _openPhotoPage(BuildContext context, String imageUrl, String category, String imageId) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -52,65 +102,99 @@ class _CategoryPageState extends State<CategoryPage> {
       ),
     );
   }
+}
+
+class CategoryPageModel extends ChangeNotifier {
+  final String category;
+  final String subCategory;
+  bool isLoading = true;
+  bool hasError = false;
+  String errorMessage = '';
+  List<Map<String, dynamic>> imageDataList = [];
+  bool isSelectionMode = false;
+  final Set<String> selectedImageIds = {};
+
+  CategoryPageModel(this.category, this.subCategory) {
+    loadImageData();
+  }
+
+  Future<void> loadImageData() async {
+    try {
+      imageDataList = await _getImageDataList(category, subCategory);
+      isLoading = false;
+      notifyListeners();
+    } catch (error) {
+      isLoading = false;
+      hasError = true;
+      errorMessage = error.toString();
+      notifyListeners();
+    }
+  }
 
   Future<List<Map<String, dynamic>>> _getImageDataList(String category, String subCategory) async {
     final querySnapshot = await FirebaseFirestore.instance
-      .collection('images')
-      .where('category', isEqualTo: category)
-      .where('subCategory', isEqualTo: subCategory)
-      .get();
+        .collection('images')
+        .where('category', isEqualTo: category)
+        .where('subCategory', isEqualTo: subCategory)
+        .get();
 
-    return querySnapshot.docs.map((doc) => {
+    return querySnapshot.docs
+        .map((doc) => {
       'id': doc.id,
       'url': doc.data()['url'],
       'category': doc.data()['category'],
       'subCategory': doc.data()['subCategory'],
-    }).toList().cast<Map<String, dynamic>>();
+    })
+        .toList()
+        .cast<Map<String, dynamic>>();
   }
 
-  void _toggleSelectionMode() {
-    setState(() {
-      _isSelectionMode = !_isSelectionMode;
-      _selectedImageIds.clear();
-    });
+  void toggleSelectionMode() {
+    isSelectionMode = !isSelectionMode;
+    selectedImageIds.clear();
+    notifyListeners();
   }
 
-  void _selectImage(String imageId) {
-    setState(() {
-      if(_selectedImageIds.contains(imageId)) {
-        _selectedImageIds.remove(imageId);
-      } else {
-        _selectedImageIds.add(imageId);
-      }
-    });
+  void selectImage(String imageId) {
+    if (selectedImageIds.contains(imageId)) {
+      selectedImageIds.remove(imageId);
+    } else {
+      selectedImageIds.add(imageId);
+    }
+    notifyListeners();
   }
 
-  Future<void> _deleteImages() async {
+  bool isImageSelected(String imageId) {
+    return selectedImageIds.contains(imageId);
+  }
+
+  Future<void> deleteImages() async {
     final confirm = await showDialog(
-      context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: Text('사진 삭제'),
-            content: Text('선택한 이미지를 삭제하시겠습니까?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text('취소'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text('삭제'),
-              ),
-            ],
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: Text('사진 삭제'),
+        content: Text('선택한 이미지를 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('취소'),
           ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('삭제'),
+          ),
+        ],
+      ),
     );
 
     if (confirm == true) {
-      final apiKey = "491384474792879";
-      final apiSecret = "hE8xMCTm7R8q8mf0K_MrlguymiU";
-      final cloudName = "duqykedvy";
+      final apiKey = dotenv.env['API_KEY']!;
+      final apiSecret = dotenv.env['API_SECRET']!;
+      final cloudName = dotenv.env['CLOUD_NAME']!;
+      final cloudinaryUrl = dotenv.env['CLOUDINARY_URL']!;
+      final cloudinaryEndpoint = dotenv.env['CLOUDINARY_URL_ENDPOINT']!;
 
-      for (final imageId in _selectedImageIds) {
+      for (final imageId in selectedImageIds) {
         final doc = await FirebaseFirestore.instance.collection('images').doc(imageId).get();
         final url = doc.data()?['url'] as String? ?? '';
 
@@ -128,113 +212,31 @@ class _CategoryPageState extends State<CategoryPage> {
             'timestamp': timestamp.toString(),
           };
 
-          final paramString = params.entries
-              .map((entry) => '${entry.key}=${entry.value}')
-              .join('&');
+          final paramString = params.entries.map((entry) => '${entry.key}=${entry.value}').join('&');
 
           final signature = sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
 
           final response = await http.post(
-            Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/destroy'),
+            Uri.parse('$cloudinaryUrl$cloudName$cloudinaryEndpoint'),
             body: {
               ...params,
               'signature': signature,
               'api_key': apiKey,
             },
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           );
-
-          print("Response Status Code: ${response.statusCode}");
-          print("Response Body: ${response.body}");
 
           if (response.statusCode == 200) {
             await FirebaseFirestore.instance.collection('images').doc(imageId).delete();
-            print("이미지 삭제 완료. ID: $imageId");
           } else {
             print('Failed to delete image from Cloudinary. Status code: ${response.statusCode}');
           }
-        } else {
-          print('URL is empty for image ID: $imageId');
         }
       }
 
-      setState(() {
-        _selectedImageIds.clear();
-        _isSelectionMode = false;
-      });
+      selectedImageIds.clear();
+      isSelectionMode = false;
+      await loadImageData();
     }
-  }
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.category} - ${widget.subCategory}'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.delete, color: Colors.black),
-            onPressed: _isSelectionMode ? _deleteImages : _toggleSelectionMode,
-          ),
-        ],
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _getImageDataList(widget.category, widget.subCategory),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else {
-            final imageDataList = snapshot.data!;
-            if (imageDataList.isEmpty) {
-              return Center(child: Text('해당 카테고리에 저장된 사진이 없습니다.'));
-            }
-            return GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 1,
-              ),
-              padding: EdgeInsets.all(8),
-              itemCount: imageDataList.length,
-              itemBuilder: (context, index) {
-                final imageData = imageDataList[index];
-                final imageUrl = imageData['url'];
-                final imageId = imageData['id'];
-                final category = imageData['subCategory'];
-                final isSelected = _selectedImageIds.contains(imageId);
-                return GestureDetector(
-                  onTap: _isSelectionMode
-                    ? () => _selectImage(imageId)
-                    : () => _openPhotoPage(imageUrl, category, imageId),
-                  child : Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      if(_isSelectionMode)
-                        Positioned(
-                          top: 5,
-                          right: 5,
-                          child: Icon(
-                            isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                            color: isSelected ? Colors.green : Colors.white,
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            );
-          }
-        },
-      ),
-    );
   }
 }
