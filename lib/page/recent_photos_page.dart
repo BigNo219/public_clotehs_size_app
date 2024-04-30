@@ -3,26 +3,37 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ddundddun/page/photo_page.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+class RecentPhotosPageModel extends ChangeNotifier {
+  List<QueryDocumentSnapshot> _imageDocs = [];
+
+  List<QueryDocumentSnapshot> get imageDocs => _imageDocs;
+
+  Future<void> fetchImages() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('images')
+        .orderBy('timestamp', descending: true)
+        .limit(10)
+        .get();
+
+    _imageDocs = snapshot.docs;
+    notifyListeners();
+  }
+}
 
 class RecentPhotosPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('images')
-            .orderBy('timestamp', descending: true)
-            .limit(10)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else {
-            final imageDocs = snapshot.data!.docs;
+    return ChangeNotifierProvider(
+      create: (_) => RecentPhotosPageModel()..fetchImages(),
+      child: Scaffold(
+        body: Consumer<RecentPhotosPageModel>(
+          builder: (context, model, child) {
+            final imageDocs = model.imageDocs;
             if (imageDocs.isEmpty) {
-              return Center(child: Text('최근 촬영한 사진이 없습니다.'));
+              return Center(child: CircularProgressIndicator());
             }
             return GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -42,16 +53,18 @@ class RecentPhotosPage extends StatelessWidget {
                   onTap: () => _openPhotoPage(context, imageUrl, subCategory, imageId),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      imageUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
                       fit: BoxFit.cover,
+                      placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) => Icon(Icons.error),
                     ),
                   ),
                 );
               },
             );
-          }
-        },
+          },
+        ),
       ),
     );
   }
