@@ -7,13 +7,32 @@ class PhotoPage extends StatefulWidget {
   final String category;
   final String imageId;
 
-  PhotoPage({required this.imageUrl, required this.category, required this.imageId});
+  PhotoPage(
+      {required this.imageUrl, required this.category, required this.imageId});
 
   @override
   _PhotoPageState createState() => _PhotoPageState();
 }
 
 class _PhotoPageState extends State<PhotoPage> {
+  TopInfo topInfo = TopInfo(
+      topSizeInfo: TopSizeInfo(
+        totalLength: 0.0,
+        shoulderWidth: 0.0,
+        chestWidth: 0.0,
+        sleeveLength: 0.0,
+        sleeveWidth: 0.0,
+        armholeWidth: 0.0,
+        hemWidth: 0.0,
+      ),
+      lining: Lining.no,
+      elasticity: Elasticity.none,
+      transparency: Transparency.none,
+      texture: ClothingTexture.normal,
+      fit: Fit.regular,
+      thickness: Thickness.normal,
+      season: Season.summer);
+
   late Map<String, TextEditingController> _controllers = {
     'title': TextEditingController(),
     'description': TextEditingController(),
@@ -40,7 +59,10 @@ class _PhotoPageState extends State<PhotoPage> {
       _isLoading = true;
     });
 
-    final docSnapshot = await FirebaseFirestore.instance.collection('images').doc(widget.imageId).get();
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('images')
+        .doc(widget.imageId)
+        .get();
     final data = docSnapshot.data() as Map<String, dynamic>?;
 
     if (data != null) {
@@ -50,22 +72,34 @@ class _PhotoPageState extends State<PhotoPage> {
         'description': TextEditingController(text: data['description'] ?? ''),
       };
 
-      final fields = categoryForms[widget.category];
+      final fields = CategoryInfo.categoryForms[widget.category];
       if (fields != null) {
         for (var field in fields) {
-          _controllers[field] = TextEditingController(text: data[field]?.toString() ?? '');
+          _controllers[field] =
+              TextEditingController(text: data[field]?.toString() ?? '');
         }
       }
 
-      _selectedLining = data['lining'] != null ? Lining.values.byName(data['lining']) : null;
-      _selectedElasticity = data['elasticity'] != null ? Elasticity.values.byName(data['elasticity']) : null;
-      _selectedTransparency = data['transparency'] != null ? Transparency.values.byName(data['transparency']) : null;
-      _selectedClothingTexture = data['texture'] != null ? ClothingTexture.values.byName(data['texture']) : null;
-      _selectedFit = data['fit'] != null ? Fit.values.byName(data['fit']) : null;
-      _selectedThickness = data['thickness'] != null ? Thickness.values.byName(data['thickness']) : null;
-      _selectedSeason = data['season'] != null ? Season.values.byName(data['season']) : null;
+      _selectedLining =
+          data['lining'] != null ? Lining.values.byName(data['lining']) : null;
+      _selectedElasticity = data['elasticity'] != null
+          ? Elasticity.values.byName(data['elasticity'])
+          : null;
+      _selectedTransparency = data['transparency'] != null
+          ? Transparency.values.byName(data['transparency'])
+          : null;
+      _selectedClothingTexture = data['texture'] != null
+          ? ClothingTexture.values.byName(data['texture'])
+          : null;
+      _selectedFit =
+          data['fit'] != null ? Fit.values.byName(data['fit']) : null;
+      _selectedThickness = data['thickness'] != null
+          ? Thickness.values.byName(data['thickness'])
+          : null;
+      _selectedSeason =
+          data['season'] != null ? Season.values.byName(data['season']) : null;
     } else {
-      final fields = categoryForms[widget.category];
+      final fields = CategoryInfo.categoryForms[widget.category];
       if (fields != null) {
         _controllers = {
           for (var field in fields) field: TextEditingController(),
@@ -79,14 +113,16 @@ class _PhotoPageState extends State<PhotoPage> {
   }
 
   Future<void> _saveDetails() async {
-    final fields = categoryForms[widget.category] ?? [];
+    final fields = CategoryInfo.categoryForms[widget.category] ?? [];
 
     final data = {
       'title': _controllers['title']!.text,
       'customerName': _controllers['customerName']!.text,
       'description': _controllers['description']!.text,
       for (var field in fields)
-        field: _controllers[field]?.text.isNotEmpty == true ? int.parse(_controllers[field]!.text) : null,
+        field: _controllers[field]?.text.isNotEmpty == true
+            ? int.parse(_controllers[field]!.text)
+            : null,
       'lining': _selectedLining?.toString().split('.').last ?? '',
       'elasticity': _selectedElasticity?.toString().split('.').last ?? '',
       'transparency': _selectedTransparency?.toString().split('.').last ?? '',
@@ -96,22 +132,28 @@ class _PhotoPageState extends State<PhotoPage> {
       'season': _selectedSeason?.toString().split('.').last ?? '',
     };
 
-    await FirebaseFirestore.instance.collection('images').doc(widget.imageId).update(data);
+    await FirebaseFirestore.instance
+        .collection('images')
+        .doc(widget.imageId)
+        .update(data);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('사이즈 및 상세내용이 저장되었습니다.')),
+      const SnackBar(content: Text('사이즈 및 상세내용이 저장되었습니다.')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('사이즈 및 상세내용 입력')),
+      appBar: AppBar(title: const Text('사이즈 및 상세내용 입력')),
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('images').doc(widget.imageId).get(),
+        future: FirebaseFirestore.instance
+            .collection('images')
+            .doc(widget.imageId)
+            .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -121,10 +163,10 @@ class _PhotoPageState extends State<PhotoPage> {
           final imageData = snapshot.data!.data() as Map<String, dynamic>;
           final imageUrl = imageData['url'] as String;
 
-          final fields = categoryForms[widget.category];
+          final fields = CategoryInfo.categoryForms[widget.category];
 
           if (fields == null) {
-            return Center(child: Text('해당 카테고리에 대한 정보가 없습니다.'));
+            return const Center(child: Text('해당 카테고리에 대한 정보가 없습니다.'));
           }
           return SingleChildScrollView(
             controller: _scrollController,
@@ -142,20 +184,46 @@ class _PhotoPageState extends State<PhotoPage> {
                 _buildTextField('title', '제목'),
                 _buildTextField('customerName', '거래처 명'),
                 _buildMultilineTextField('description', '추가 정보'),
-                ...categoryForms[widget.category]!.map((field) => _buildTextField(field, field)).toList(),
-                _buildRadioGroup<Lining>('안감', Lining.values, liningLabels, _selectedLining, (value) => _selectedLining = value),
-                _buildRadioGroup<Elasticity>('신축성', Elasticity.values, elasticityLabels, _selectedElasticity, (value) => _selectedElasticity = value),
-                _buildRadioGroup<Transparency>('비침', Transparency.values, transparencyLabels, _selectedTransparency, (value) => _selectedTransparency = value),
-                _buildRadioGroup<ClothingTexture>('촉감', ClothingTexture.values, textureLabels, _selectedClothingTexture, (value) => _selectedClothingTexture = value),
-                _buildRadioGroup<Fit>('핏감', Fit.values, fitLabels, _selectedFit, (value) => _selectedFit = value),
-                _buildRadioGroup<Thickness>('두께감', Thickness.values, thicknessLabels, _selectedThickness, (value) => _selectedThickness = value),
-                _buildRadioGroup<Season>('계절감', Season.values, seasonLabels, _selectedSeason, (value) => _selectedSeason = value),
+                ...CategoryInfo.categoryForms[widget.category]!
+                    .map((field) => _buildTextField(field, field))
+                    .toList(),
+                _buildRadioGroup<Lining>('안감', Lining.values, CategoryInfo.liningLabels,
+                    _selectedLining, (value) => _selectedLining = value),
+                _buildRadioGroup<Elasticity>(
+                    '신축성',
+                    Elasticity.values,
+                    CategoryInfo.elasticityLabels,
+                    _selectedElasticity,
+                    (value) => _selectedElasticity = value),
+                _buildRadioGroup<Transparency>(
+                    '비침',
+                    Transparency.values,
+                    CategoryInfo.transparencyLabels,
+                    _selectedTransparency,
+                    (value) => _selectedTransparency = value),
+                _buildRadioGroup<ClothingTexture>(
+                    '촉감',
+                    ClothingTexture.values,
+                    CategoryInfo.textureLabels,
+                    _selectedClothingTexture,
+                    (value) => _selectedClothingTexture = value),
+                _buildRadioGroup<Fit>('핏감', Fit.values, CategoryInfo.fitLabels, _selectedFit,
+                    (value) => _selectedFit = value),
+                _buildRadioGroup<Thickness>(
+                    '두께감',
+                    Thickness.values,
+                    CategoryInfo.thicknessLabels,
+                    _selectedThickness,
+                    (value) => _selectedThickness = value),
+                _buildRadioGroup<Season>('계절감', Season.values, CategoryInfo.seasonLabels,
+                    _selectedSeason, (value) => _selectedSeason = value),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton(
                     onPressed: _saveDetails,
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.black87),
+                      backgroundColor:
+                          MaterialStateProperty.all(Colors.black87),
                       foregroundColor: MaterialStateProperty.all(Colors.white),
                       shape: MaterialStateProperty.all(
                         RoundedRectangleBorder(
@@ -164,10 +232,11 @@ class _PhotoPageState extends State<PhotoPage> {
                       ),
                       elevation: MaterialStateProperty.all(8.0),
                       padding: MaterialStateProperty.all(
-                        EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+                        const EdgeInsets.symmetric(
+                            vertical: 16.0, horizontal: 24.0),
                       ),
                     ),
-                    child: Text('저장'),
+                    child: const Text('저장'),
                   ),
                 ),
               ],
@@ -180,16 +249,16 @@ class _PhotoPageState extends State<PhotoPage> {
 
   Widget _buildTextField(String field, String label) {
     return Padding(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: TextField(
         controller: _controllers[field],
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
+          labelStyle: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
       ),
     );
@@ -197,67 +266,71 @@ class _PhotoPageState extends State<PhotoPage> {
 
   Widget _buildMultilineTextField(String field, String label) {
     return Padding(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: TextField(
         controller: _controllers[field],
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
+          labelStyle: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+          border: const OutlineInputBorder(),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
         ),
         maxLines: null,
         keyboardType: TextInputType.multiline,
-        style: TextStyle(height: 1.0),
+        style: const TextStyle(height: 1.0),
       ),
     );
   }
 
   Widget _buildRadioGroup<T>(
-      String title,
-      List<T> values,
-      Map<T, String> labels,
-      T? selectedValue,
-      void Function(T?) onChanged,
-      ) {
+    String title,
+    List<T> values,
+    Map<T, String> labels,
+    T? selectedValue,
+    void Function(T?) onChanged,
+  ) {
     return Padding(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16.0,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 8.0),
+          const SizedBox(height: 8.0),
           Wrap(
             spacing: 8.0,
             runSpacing: 8.0,
-            children: values.map((value) => Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Radio<T>(
-                  value: value,
-                  groupValue: selectedValue,
-                  onChanged: (value) {
-                    final currentScrollPosition = _scrollController.position.pixels;
-                    setState(() => onChanged(value));
-                    _scrollController.animateTo(
-                      currentScrollPosition,
-                      duration: Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                ),
-                Text(labels[value]!),
-              ],
-            )).toList(),
+            children: values
+                .map((value) => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Radio<T>(
+                          value: value,
+                          groupValue: selectedValue,
+                          onChanged: (value) {
+                            final currentScrollPosition =
+                                _scrollController.position.pixels;
+                            setState(() => onChanged(value));
+                            _scrollController.animateTo(
+                              currentScrollPosition,
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                        ),
+                        Text(labels[value]!),
+                      ],
+                    ))
+                .toList(),
           ),
         ],
       ),
