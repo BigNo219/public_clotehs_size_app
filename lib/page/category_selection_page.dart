@@ -9,11 +9,11 @@ class CategorySelectionPage extends StatefulWidget {
 
   @override
   _CategorySelectionPageState createState() => _CategorySelectionPageState();
-
 }
 
 class _CategorySelectionPageState extends State<CategorySelectionPage> {
   final RefreshCountFileCategories _refreshCountFileCategories = RefreshCountFileCategories();
+  String? selectedCategory;
 
   @override
   void initState() {
@@ -23,47 +23,68 @@ class _CategorySelectionPageState extends State<CategorySelectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: clothingCategories.length,
-      itemBuilder: (context, index) {
-        final category = clothingCategories.keys.elementAt(index);
-        final subCategories = clothingCategories[category]!;
-        return Card(
-          color: Colors.black,
-          elevation: 2,
-          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ExpansionTile(
-            title: Text(
-              '$category  (${_refreshCountFileCategories.fileCounts[category]?.values.fold(0, (sum, item) => sum + item) ?? 0})',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-            children: subCategories.map((subCategory) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 1,
+          child: ListView.builder(
+            itemCount: clothingCategories.length,
+            itemBuilder: (context, index) {
+              final category = clothingCategories.keys.elementAt(index);
               return ListTile(
                 title: Text(
-                  '      - $subCategory  (${_refreshCountFileCategories.fileCounts[category]?[subCategory] ?? 0})',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                  '$category (${_refreshCountFileCategories.fileCounts[category]?.values.reduce((a, b) => a + b) ?? 0})',
+                  style: selectedCategory == category ?
+                  TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black) :
+                  TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                onTap: () {
+                  setState(() {
+                    selectedCategory = category;
+                  });
+                },
+                tileColor: selectedCategory == category ? Colors.white : Colors.black,
+              );
+            },
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: selectedCategory != null
+              ? ListView.builder(
+            itemCount: clothingCategories[selectedCategory]!.length,
+            itemBuilder: (context, index) {
+              final subCategory = clothingCategories[selectedCategory]![index];
+              return ListTile(
+                title: Text(
+                  '$subCategory  (${_refreshCountFileCategories.fileCounts[selectedCategory]?[subCategory] ?? 0})',
+                  style: selectedCategory == subCategory?
+                  TextStyle(fontSize: 16, color: Colors.black) :
+                  TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 onTap: () {
                   if (widget.onCategorySelected != null) {
-                    widget.onCategorySelected!(category, subCategory);
+                    widget.onCategorySelected!(selectedCategory!, subCategory);
                   } else {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CategoryPage(category: category, subCategory: subCategory),
+                        builder: (context) => CategoryPage(category: selectedCategory!, subCategory: subCategory),
                       ),
-                    ).then ((result) {
+                    ).then((result) {
                       if (result != null && result) {
                         _refreshCountFileCategories.countFilesInCategories(clothingCategories);
                       }
                     });
                   }
                 },
+                tileColor: selectedCategory == subCategory ? Colors.grey : Colors.black87,
               );
-            }).toList(),
-          ),
-        );
-      },
+            },
+          )
+              : Container(),
+        ),
+      ],
     );
   }
 }
