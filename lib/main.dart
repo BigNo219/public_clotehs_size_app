@@ -8,28 +8,37 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ddundddun/page/recent_photos_page.dart';
 import 'package:ddundddun/functions/refresh_count_file_categories.dart';
 import 'package:ddundddun/functions/delete_weekend_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() async{
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Size App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: MyHomePage(),
+    return MaterialApp(
+      navigatorKey: navigatorKey,
+      debugShowCheckedModeBanner: false,
+      title: 'Size App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
@@ -43,9 +52,9 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(
-        length: 3,
-        vsync: this,
-        initialIndex: 1,
+      length: 3,
+      vsync: this,
+      initialIndex: 1,
     );
     _requestPermission();
   }
@@ -75,21 +84,21 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text("필요한 권한"),
-          content: Text("앱에서 필요한 권한이 거부되었습니다. 설정에서 권한을 허용해주세요."),
+          title: const Text("필요한 권한"),
+          content: const Text("앱에서 필요한 권한이 거부되었습니다. 설정에서 권한을 허용해주세요."),
           actions: [
             TextButton(
-              onPressed: ()  {
+              onPressed: () {
                 openAppSettings(); // 사용자가 앱 설정 페이지로 이동시키는 함수
                 Navigator.of(context).pop();
               },
-              child: Text(
+              child: const Text(
                 "설정으로 이동",
-                ),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text("취소"),
+              child: const Text("취소"),
             ),
           ],
         ),
@@ -98,21 +107,22 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
   }
 
   Future<String> uploadImageToCloudinary(
-      String imagePath,
-      String cloudinaryImagePath ) async {
+      String imagePath, String cloudinaryImagePath) async {
     try {
       final cloudinary = CloudinaryPublic(
-          'duqykedvy',
-          'flutter_clotehs_size_app',
-          apiKey: '491384474792879',
-          apiSecret: 'hE8xMCTm7R8q8mf0K_MrlguymiU',
-          cache: false);
+        dotenv.env['CLOUD_NAME']!,
+        dotenv.env['CLOUDINARY_PRESET']!,
+        apiKey: dotenv.env['API_KEY']!,
+        apiSecret: dotenv.env['API_SECRET']!,
+        cache: false,
+      );
 
       final response = await cloudinary.uploadFile(
         CloudinaryFile.fromFile(
-            imagePath,
-            resourceType: CloudinaryResourceType.Image,
-            folder: cloudinaryImagePath),
+          imagePath,
+          resourceType: CloudinaryResourceType.Image,
+          folder: cloudinaryImagePath,
+        ),
       );
 
       return response.secureUrl!;
@@ -147,7 +157,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Select Category'),
+          title: const Text('Select Category'),
           content: SingleChildScrollView(
             child: ListBody(
               children: clothingCategories.entries.map((entry) {
@@ -162,7 +172,8 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                         _saveImage(imagePath, category, subCategory);
                       },
                       child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 16.0),
                         child: Text(subCategory),
                       ),
                     );
@@ -176,7 +187,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
           ],
         );
@@ -184,24 +195,24 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     );
   }
 
-  Future<void> _saveImage(String imagePath, String category, String subCategory) async {
+  Future<void> _saveImage(
+      String imagePath, String category, String subCategory) async {
     final cloudinaryImagePath = '$category/$subCategory';
 
     final imageUrl = await uploadImageToCloudinary(
-        imagePath,
-        cloudinaryImagePath
-    );
+        imagePath, cloudinaryImagePath);
     print('Image URL: $imageUrl');
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('" $category -> $subCategory "에 저장되었습니다.')),
+      SnackBar(
+          content: Text('" $category -> $subCategory "에 저장되었습니다.')),
     );
 
     final imageData = {
-      'url' : imageUrl,
-      'category' : category,
-      'subCategory' : subCategory,
-      'timestamp' : FieldValue.serverTimestamp(),
+      'url': imageUrl,
+      'category': category,
+      'subCategory': subCategory,
+      'timestamp': FieldValue.serverTimestamp(),
     };
 
     await FirebaseFirestore.instance.collection('images').add(imageData);
@@ -218,7 +229,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           '[ UN;BUTTY ] ... Size App',
           style: TextStyle(
             color: Colors.black,
@@ -226,9 +237,9 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
             fontSize: 24,
           ),
         ),
-        actions:[
+        actions: [
           IconButton(
-            icon: Icon(Icons.delete, color: Colors.black),
+            icon: const Icon(Icons.delete, color: Colors.black),
             onPressed: () {
               Navigator.push(
                 context,
@@ -239,43 +250,15 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
             },
           ),
           IconButton(
-            icon: Icon(Icons.refresh, color: Colors.black),
+            icon: const Icon(Icons.refresh, color: Colors.black),
             onPressed: () {
               setState(() {
-                _countFileCategories.countFilesInCategories(clothingCategories); // 카테고리 파일 개수 새로고침
+                _countFileCategories.countFilesInCategories(
+                    clothingCategories); // 카테고리 파일 개수 새로고침
               });
             },
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(kToolbarHeight),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: TabBar(
-              indicatorColor: Colors.black38,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.grey,
-              labelStyle: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-              unselectedLabelStyle: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-              controller: _tabController,
-              tabs: [
-                Tab(text: 'Recent'),
-                Tab(text: 'Home'),
-                Tab(text: 'Categories'),
-              ],
-            ),
-          ),
-        ),
       ),
       body: TabBarView(
         controller: _tabController,
@@ -285,58 +268,90 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
           CategorySelectionPage(),
         ],
       ),
+      bottomNavigationBar: Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: TabBar(
+          indicatorColor: Colors.black38,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.grey,
+          labelStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 16,
+            color: Colors.grey,
+          ),
+          controller: _tabController,
+          tabs: [
+            const Tab(text: 'Recent'),
+            const Tab(text: 'Home'),
+            const Tab(text: 'Categories'),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildHomeTab() {
     return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/logo2.png',
-              width: 200,
-              height: 120,
-            ),
-            SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: _selectImageFromGallery,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[600],
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                  ),
-                  child: Text(
-                    'Gallery',
-                    style: TextStyle(fontSize: 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/logo2.png',
+            width: 200,
+            height: 120,
+          ),
+          const SizedBox(height: 40),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: _selectImageFromGallery,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[600],
+                  foregroundColor: Colors.white,
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-                SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: _takePicture,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[800],
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                  ),
-                  child: Text(
-                    'Camera',
-                    style: TextStyle(fontSize: 20),
+                child: const Text(
+                  'Gallery',
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
+              const SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: _takePicture,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[800],
+                  foregroundColor: Colors.white,
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+                child: const Text(
+                  'Camera',
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
