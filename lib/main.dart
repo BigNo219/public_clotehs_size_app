@@ -9,6 +9,8 @@ import 'package:ddundddun/page/recent_photos_page.dart';
 import 'package:ddundddun/functions/refresh_count_file_categories.dart';
 import 'package:ddundddun/functions/delete_weekend_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import 'package:ddundddun/models/radio_view_model.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -16,7 +18,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
   await Firebase.initializeApp();
-  runApp(const MyApp());
+  runApp(
+      ChangeNotifierProvider(
+        create: (context) => RadioViewModel(),
+        child:const MyApp(),
+      ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -125,7 +132,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
         ),
       );
 
-      return response.secureUrl!;
+      return response.secureUrl;
     } catch (e) {
       print('Failed to upload image to Cloudinary: $e');
       return '';
