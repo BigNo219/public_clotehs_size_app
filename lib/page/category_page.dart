@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:ddundddun/page/photo_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
