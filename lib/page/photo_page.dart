@@ -1,118 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ddundddun/models/category_form.dart';
+import '../models/radio_view_model.dart';
+import '../widgets/custom_divider_widget.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../widgets/radio_group_widget.dart';
 
 class PhotoPage extends StatefulWidget {
   final String imageUrl;
   final String category;
   final String imageId;
 
-  PhotoPage(
-      {required this.imageUrl, required this.category, required this.imageId});
+  PhotoPage({required this.imageUrl, required this.category, required this.imageId});
 
   @override
   _PhotoPageState createState() => _PhotoPageState();
 }
 
 class _PhotoPageState extends State<PhotoPage> {
-  TopInfo topInfo = TopInfo(
-      topSizeInfo: TopSizeInfo(
-        totalLength: 0.0,
-        shoulderWidth: 0.0,
-        chestWidth: 0.0,
-        sleeveLength: 0.0,
-        sleeveWidth: 0.0,
-        armholeWidth: 0.0,
-        hemWidth: 0.0,
-      ),
-      lining: Lining.no,
-      elasticity: Elasticity.none,
-      transparency: Transparency.none,
-      texture: ClothingTexture.normal,
-      fit: Fit.regular,
-      thickness: Thickness.normal,
-      season: Season.summer);
-
-  late Map<String, TextEditingController> _controllers = {
-    'title': TextEditingController(),
-    'description': TextEditingController(),
-  };
-  Lining? _selectedLining;
-  Elasticity? _selectedElasticity;
-  Transparency? _selectedTransparency;
-  ClothingTexture? _selectedClothingTexture;
-  Fit? _selectedFit;
-  Thickness? _selectedThickness;
-  Season? _selectedSeason;
-  bool _isLoading = false;
-
-  final _scrollController = ScrollController();
+  late Map<String, TextEditingController> _controllers;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    _controllers = {
+      'title': TextEditingController(),
+      'description': TextEditingController(),
+    };
   }
 
-  Future<void> _loadInitialData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    final docSnapshot = await FirebaseFirestore.instance
-        .collection('images')
-        .doc(widget.imageId)
-        .get();
-    final data = docSnapshot.data() as Map<String, dynamic>?;
-
-    if (data != null) {
-      _controllers = {
-        'title': TextEditingController(text: data['title'] ?? ''),
-        'customerName': TextEditingController(text: data['customerName'] ?? ''),
-        'description': TextEditingController(text: data['description'] ?? ''),
-      };
-
-      final fields = CategoryInfo.categoryForms[widget.category];
-      if (fields != null) {
-        for (var field in fields) {
-          _controllers[field] =
-              TextEditingController(text: data[field]?.toString() ?? '');
-        }
-      }
-
-      _selectedLining =
-          data['lining'] != null ? Lining.values.byName(data['lining']) : null;
-      _selectedElasticity = data['elasticity'] != null
-          ? Elasticity.values.byName(data['elasticity'])
-          : null;
-      _selectedTransparency = data['transparency'] != null
-          ? Transparency.values.byName(data['transparency'])
-          : null;
-      _selectedClothingTexture = data['texture'] != null
-          ? ClothingTexture.values.byName(data['texture'])
-          : null;
-      _selectedFit =
-          data['fit'] != null ? Fit.values.byName(data['fit']) : null;
-      _selectedThickness = data['thickness'] != null
-          ? Thickness.values.byName(data['thickness'])
-          : null;
-      _selectedSeason =
-          data['season'] != null ? Season.values.byName(data['season']) : null;
-    } else {
-      final fields = CategoryInfo.categoryForms[widget.category];
-      if (fields != null) {
-        _controllers = {
-          for (var field in fields) field: TextEditingController(),
-        };
-      }
-    }
-
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  Future<void> _saveDetails() async {
+  Future<void> _saveDetails(RadioViewModel viewModel) async {
     final fields = CategoryInfo.categoryForms[widget.category] ?? [];
 
     final data = {
@@ -120,22 +39,17 @@ class _PhotoPageState extends State<PhotoPage> {
       'customerName': _controllers['customerName']!.text,
       'description': _controllers['description']!.text,
       for (var field in fields)
-        field: _controllers[field]?.text.isNotEmpty == true
-            ? int.parse(_controllers[field]!.text)
-            : null,
-      'lining': _selectedLining?.toString().split('.').last ?? '',
-      'elasticity': _selectedElasticity?.toString().split('.').last ?? '',
-      'transparency': _selectedTransparency?.toString().split('.').last ?? '',
-      'texture': _selectedClothingTexture?.toString().split('.').last ?? '',
-      'fit': _selectedFit?.toString().split('.').last ?? '',
-      'thickness': _selectedThickness?.toString().split('.').last ?? '',
-      'season': _selectedSeason?.toString().split('.').last ?? '',
+        field: _controllers[field]?.text.isNotEmpty == true ? int.parse(_controllers[field]!.text) : null,
+      'lining': viewModel.selectedLining?.toString().split('.').last ?? '',
+      'elasticity': viewModel.selectedElasticity?.toString().split('.').last ?? '',
+      'transparency': viewModel.selectedTransparency?.toString().split('.').last ?? '',
+      'texture': viewModel.selectedClothingTexture?.toString().split('.').last ?? '',
+      'fit': viewModel.selectedFit?.toString().split('.').last ?? '',
+      'thickness': viewModel.selectedThickness?.toString().split('.').last ?? '',
+      'season': viewModel.selectedSeason?.toString().split('.').last ?? '',
     };
 
-    await FirebaseFirestore.instance
-        .collection('images')
-        .doc(widget.imageId)
-        .update(data);
+    await FirebaseFirestore.instance.collection('images').doc(widget.imageId).update(data);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('사이즈 및 상세내용이 저장되었습니다.')),
@@ -146,11 +60,8 @@ class _PhotoPageState extends State<PhotoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('사이즈 및 상세내용 입력')),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance
-            .collection('images')
-            .doc(widget.imageId)
-            .get(),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('images').doc(widget.imageId).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -168,62 +79,101 @@ class _PhotoPageState extends State<PhotoPage> {
           if (fields == null) {
             return const Center(child: Text('해당 카테고리에 대한 정보가 없습니다.'));
           }
+
+          _controllers = {
+            'title': TextEditingController(text: imageData['title'] ?? ''),
+            'customerName': TextEditingController(text: imageData['customerName'] ?? ''),
+            'description': TextEditingController(text: imageData['description'] ?? ''),
+            for (var field in fields) field: TextEditingController(text: imageData[field]?.toString() ?? ''),
+          };
+
           return SingleChildScrollView(
             controller: _scrollController,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
+                CachedNetworkImage(
+                  imageUrl: imageUrl,
                   width: 300.0,
                   height: 300.0,
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                  ),
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => const CircularProgressIndicator(),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
                 _buildTextField('title', '제목'),
                 _buildTextField('customerName', '거래처 명'),
                 _buildMultilineTextField('description', '추가 정보'),
-                ...CategoryInfo.categoryForms[widget.category]!
-                    .map((field) => _buildTextField(field, field))
-                    .toList(),
-                _buildRadioGroup<Lining>('안감', Lining.values, CategoryInfo.liningLabels,
-                    _selectedLining, (value) => _selectedLining = value),
-                _buildRadioGroup<Elasticity>(
-                    '신축성',
-                    Elasticity.values,
-                    CategoryInfo.elasticityLabels,
-                    _selectedElasticity,
-                    (value) => _selectedElasticity = value),
-                _buildRadioGroup<Transparency>(
-                    '비침',
-                    Transparency.values,
-                    CategoryInfo.transparencyLabels,
-                    _selectedTransparency,
-                    (value) => _selectedTransparency = value),
-                _buildRadioGroup<ClothingTexture>(
-                    '촉감',
-                    ClothingTexture.values,
-                    CategoryInfo.textureLabels,
-                    _selectedClothingTexture,
-                    (value) => _selectedClothingTexture = value),
-                _buildRadioGroup<Fit>('핏감', Fit.values, CategoryInfo.fitLabels, _selectedFit,
-                    (value) => _selectedFit = value),
-                _buildRadioGroup<Thickness>(
-                    '두께감',
-                    Thickness.values,
-                    CategoryInfo.thicknessLabels,
-                    _selectedThickness,
-                    (value) => _selectedThickness = value),
-                _buildRadioGroup<Season>('계절감', Season.values, CategoryInfo.seasonLabels,
-                    _selectedSeason, (value) => _selectedSeason = value),
+                ...fields.map((field) => _buildTextField(field, field)).toList(),
+                Consumer<RadioViewModel>(
+                  builder: (context, viewModel, child) {
+                    return Column(
+                      children: [
+                        RadioGroupWidget<Lining>(
+                          title: '안감',
+                          values: Lining.values,
+                          labels: CategoryInfo.liningLabels,
+                          selectedValue: viewModel.selectedLining,
+                          onChanged: viewModel.setSelectedLining,
+                        ),
+                        CustomDivider(),
+                        RadioGroupWidget<Elasticity>(
+                          title: '신축성',
+                          values: Elasticity.values,
+                          labels: CategoryInfo.elasticityLabels,
+                          selectedValue: viewModel.selectedElasticity,
+                          onChanged: viewModel.setSelectedElasticity,
+                        ),
+                        CustomDivider(),
+                        RadioGroupWidget<Transparency>(
+                          title: '비침',
+                          values: Transparency.values,
+                          labels: CategoryInfo.transparencyLabels,
+                          selectedValue: viewModel.selectedTransparency,
+                          onChanged: viewModel.setSelectedTransparency,
+                        ),
+                        CustomDivider(),
+                        RadioGroupWidget<ClothingTexture>(
+                          title: '촉감',
+                          values: ClothingTexture.values,
+                          labels: CategoryInfo.textureLabels,
+                          selectedValue: viewModel.selectedClothingTexture,
+                          onChanged: viewModel.setSelectedClothingTexture,
+                        ),
+                        CustomDivider(),
+                        RadioGroupWidget<Fit>(
+                          title: '핏감',
+                          values: Fit.values,
+                          labels: CategoryInfo.fitLabels,
+                          selectedValue: viewModel.selectedFit,
+                          onChanged: viewModel.setSelectedFit,
+                        ),
+                        CustomDivider(),
+                        RadioGroupWidget<Thickness>(
+                          title: '두께감',
+                          values: Thickness.values,
+                          labels: CategoryInfo.thicknessLabels,
+                          selectedValue: viewModel.selectedThickness,
+                          onChanged: viewModel.setSelectedThickness,
+                        ),
+                        CustomDivider(),
+                        RadioGroupWidget<Season>(
+                          title: '계절감',
+                          values: Season.values,
+                          labels: CategoryInfo.seasonLabels,
+                          selectedValue: viewModel.selectedSeason,
+                          onChanged: viewModel.setSelectedSeason,
+                        ),
+                        CustomDivider(),
+                      ],
+                    );
+                  },
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton(
-                    onPressed: _saveDetails,
+                    onPressed: () => _saveDetails(context.read<RadioViewModel>()),
                     style: ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all(Colors.black87),
+                      backgroundColor: MaterialStateProperty.all(Colors.black87),
                       foregroundColor: MaterialStateProperty.all(Colors.white),
                       shape: MaterialStateProperty.all(
                         RoundedRectangleBorder(
@@ -232,8 +182,7 @@ class _PhotoPageState extends State<PhotoPage> {
                       ),
                       elevation: MaterialStateProperty.all(8.0),
                       padding: MaterialStateProperty.all(
-                        const EdgeInsets.symmetric(
-                            vertical: 16.0, horizontal: 24.0),
+                        const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
                       ),
                     ),
                     child: const Text('저장'),
@@ -276,63 +225,11 @@ class _PhotoPageState extends State<PhotoPage> {
             fontWeight: FontWeight.bold,
           ),
           border: const OutlineInputBorder(),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+          contentPadding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
         ),
         maxLines: null,
         keyboardType: TextInputType.multiline,
         style: const TextStyle(height: 1.0),
-      ),
-    );
-  }
-
-  Widget _buildRadioGroup<T>(
-    String title,
-    List<T> values,
-    Map<T, String> labels,
-    T? selectedValue,
-    void Function(T?) onChanged,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8.0),
-          Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            children: values
-                .map((value) => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Radio<T>(
-                          value: value,
-                          groupValue: selectedValue,
-                          onChanged: (value) {
-                            final currentScrollPosition =
-                                _scrollController.position.pixels;
-                            setState(() => onChanged(value));
-                            _scrollController.animateTo(
-                              currentScrollPosition,
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeInOut,
-                            );
-                          },
-                        ),
-                        Text(labels[value]!),
-                      ],
-                    ))
-                .toList(),
-          ),
-        ],
       ),
     );
   }
