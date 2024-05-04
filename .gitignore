@@ -42,4 +42,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# .env 파일 무시
 .env
