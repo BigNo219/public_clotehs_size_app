@@ -45,11 +45,10 @@ class CategoryPage extends StatelessWidget {
               return GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 1,
+                  crossAxisSpacing: 1,
+                  mainAxisSpacing: 1,
                 ),
-                padding: EdgeInsets.all(8),
+                padding: EdgeInsets.all(10),
                 itemCount: imageDataList.length,
                 itemBuilder: (context, index) {
                   final imageData = imageDataList[index];
@@ -93,11 +92,14 @@ class CategoryPage extends StatelessWidget {
     );
   }
 
-  void _openPhotoPage(BuildContext context, String imageUrl, String category, String imageId) {
+
+  void _openPhotoPage(BuildContext context, String imageUrl, String category,
+      String imageId) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PhotoPage(imageUrl: imageUrl, category: category, imageId: imageId),
+        builder: (context) =>
+            PhotoPage(imageUrl: imageUrl, category: category, imageId: imageId),
       ),
     );
   }
@@ -130,7 +132,8 @@ class CategoryPageModel extends ChangeNotifier {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _getImageDataList(String category, String subCategory) async {
+  Future<List<Map<String, dynamic>>> _getImageDataList(String category,
+      String subCategory) async {
     final querySnapshot = await FirebaseFirestore.instance
         .collection('images')
         .where('category', isEqualTo: category)
@@ -138,7 +141,8 @@ class CategoryPageModel extends ChangeNotifier {
         .get();
 
     return querySnapshot.docs
-        .map((doc) => {
+        .map((doc) =>
+    {
       'id': doc.id,
       'url': doc.data()['url'],
       'category': doc.data()['category'],
@@ -170,20 +174,21 @@ class CategoryPageModel extends ChangeNotifier {
   Future<void> deleteImages() async {
     final confirm = await showDialog(
       context: navigatorKey.currentContext!,
-      builder: (context) => AlertDialog(
-        title: Text('사진 삭제'),
-        content: Text('선택한 이미지를 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('취소'),
+      builder: (context) =>
+          AlertDialog(
+            title: Text('사진 삭제'),
+            content: Text('선택한 이미지를 삭제하시겠습니까?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('취소'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text('삭제'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text('삭제'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -194,26 +199,38 @@ class CategoryPageModel extends ChangeNotifier {
       final cloudinaryEndpoint = dotenv.env['CLOUDINARY_URL_ENDPOINT']!;
 
       for (final imageId in selectedImageIds) {
-        final doc = await FirebaseFirestore.instance.collection('images').doc(imageId).get();
+        final doc = await FirebaseFirestore.instance
+            .collection('images')
+            .doc(imageId)
+            .get();
         final url = doc.data()?['url'] as String? ?? '';
 
         if (url.isNotEmpty) {
           final parts = url.split('/');
-          final fileName = parts.last.split('.').first;
+          final fileName = parts.last
+              .split('.')
+              .first;
           final folderPathParts = parts.sublist(7, parts.length - 1);
-          final decodedPathParts = folderPathParts.map(Uri.decodeComponent).toList();
+          final decodedPathParts =
+          folderPathParts.map(Uri.decodeComponent).toList();
           final publicId = decodedPathParts.join('/') + '/' + fileName;
 
-          final timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+          final timestamp =
+          (DateTime
+              .now()
+              .millisecondsSinceEpoch / 1000).round();
 
           final params = {
             'public_id': publicId,
             'timestamp': timestamp.toString(),
           };
 
-          final paramString = params.entries.map((entry) => '${entry.key}=${entry.value}').join('&');
+          final paramString = params.entries
+              .map((entry) => '${entry.key}=${entry.value}')
+              .join('&');
 
-          final signature = sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
+          final signature =
+          sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
 
           final response = await http.post(
             Uri.parse('$cloudinaryUrl$cloudName$cloudinaryEndpoint'),
@@ -226,9 +243,14 @@ class CategoryPageModel extends ChangeNotifier {
           );
 
           if (response.statusCode == 200) {
-            await FirebaseFirestore.instance.collection('images').doc(imageId).delete();
+            await FirebaseFirestore.instance
+                .collection('images')
+                .doc(imageId)
+                .delete();
           } else {
-            print('Failed to delete image from Cloudinary. Status code: ${response.statusCode}');
+            print(
+                'Failed to delete image from Cloudinary. Status code: ${response
+                    .statusCode}');
           }
         }
       }

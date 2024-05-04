@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
-class RefreshCountFileCategories {
-  Map<String, Map<String, int>> fileCounts = {};
+class RefreshCountFileCategories extends ChangeNotifier {
+  Map<String, Map<String, int>> _fileCounts = {};
+
+  Map<String, Map<String, int>> get fileCounts => _fileCounts;
 
   Future<void> countFilesInCategories(Map<String, List<String>> clothingCategories) async {
-    Map<String, Map<String, int>> tempCounts = {};
+    _fileCounts = {};
 
     for (var category in clothingCategories.keys) {
       Map<String, int> subCategoryCounts = {};
@@ -18,9 +21,9 @@ class RefreshCountFileCategories {
         subCategoryCounts[subCategory] = subcategorySnapshots.docs.length;
       }
 
-      tempCounts[category] = subCategoryCounts;
+      _fileCounts[category] = subCategoryCounts;
     }
 
-    fileCounts = tempCounts;
+    notifyListeners(); // UI 업데이트를 알립니다.
   }
 }

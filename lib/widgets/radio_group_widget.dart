@@ -41,16 +41,16 @@ class RadioGroupWidget<T> extends StatelessWidget {
               runSpacing: 8.0,
               children: values
                   .map((value) => Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Radio<T>(
-                    value: value,
-                    groupValue: selectedValue,
-                    onChanged: onChanged,
-                  ),
-                  Text(labels[value]!),
-                ],
-              ))
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Radio<T>(
+                            value: value,
+                            groupValue: selectedValue,
+                            onChanged: onChanged,
+                          ),
+                          Text(labels[value]!),
+                        ],
+                      ))
                   .toList(),
             ),
           ),

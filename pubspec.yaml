@@ -36,16 +36,20 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^3.0.0
-
+# android 관련 설정
+android:
+  bundle:
+    versionCode: 4
+    versionName: 1.0.3
 # iOS 관련 설정
 ios:
   build:
     targets:
       - lib/main.dart
   bundle_name: ddundddun
-  bundle_display_name: ddundddun
+  bundle_display_name: UN;BUTTY SIZE
   bundle_identifier: com.example.ddundddun
-  bundle_version: 1.0.0+1
+  bundle_version: 1.0.0+4
   bundle_build_number: 1
   include_bitcode: true
   export_options_plist:

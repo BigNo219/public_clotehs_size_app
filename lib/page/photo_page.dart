@@ -29,6 +29,7 @@ class _PhotoPageState extends State<PhotoPage> {
       'title': TextEditingController(),
       'description': TextEditingController(),
     };
+    _fetchDataFromFireStore();
   }
 
   Future<void> _saveDetails(RadioViewModel viewModel) async {
@@ -56,6 +57,11 @@ class _PhotoPageState extends State<PhotoPage> {
     );
   }
 
+  Future<void> _fetchDataFromFireStore() async {
+    final viewModel = context.read<RadioViewModel>();
+    await viewModel.initializeFromFirestore(widget.imageId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,8 +77,8 @@ class _PhotoPageState extends State<PhotoPage> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          final imageData = snapshot.data!.data() as Map<String, dynamic>;
-          final imageUrl = imageData['url'] as String;
+          final imageData = snapshot.data!.data() as Map<String, dynamic>?;
+          final imageUrl = widget.imageUrl;
 
           final fields = CategoryInfo.categoryForms[widget.category];
 
@@ -81,10 +87,10 @@ class _PhotoPageState extends State<PhotoPage> {
           }
 
           _controllers = {
-            'title': TextEditingController(text: imageData['title'] ?? ''),
-            'customerName': TextEditingController(text: imageData['customerName'] ?? ''),
-            'description': TextEditingController(text: imageData['description'] ?? ''),
-            for (var field in fields) field: TextEditingController(text: imageData[field]?.toString() ?? ''),
+            'title': TextEditingController(text: imageData?['title'] ?? ''),
+            'customerName': TextEditingController(text: imageData?['customerName'] ?? ''),
+            'description': TextEditingController(text: imageData?['description'] ?? ''),
+            for (var field in fields) field: TextEditingController(text: imageData?[field]?.toString() ?? ''),
           };
 
           return SingleChildScrollView(
