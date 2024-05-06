@@ -33,28 +33,58 @@ class _PhotoPageState extends State<PhotoPage> {
   }
 
   Future<void> _saveDetails(RadioViewModel viewModel) async {
-    final fields = CategoryInfo.categoryForms[widget.category] ?? [];
+    try {
+      final fields = CategoryInfo.categoryForms[widget.category] ?? [];
 
-    final data = {
-      'title': _controllers['title']!.text,
-      'customerName': _controllers['customerName']!.text,
-      'description': _controllers['description']!.text,
-      for (var field in fields)
-        field: _controllers[field]?.text.isNotEmpty == true ? int.parse(_controllers[field]!.text) : null,
-      'lining': viewModel.selectedLining?.toString().split('.').last ?? '',
-      'elasticity': viewModel.selectedElasticity?.toString().split('.').last ?? '',
-      'transparency': viewModel.selectedTransparency?.toString().split('.').last ?? '',
-      'texture': viewModel.selectedClothingTexture?.toString().split('.').last ?? '',
-      'fit': viewModel.selectedFit?.toString().split('.').last ?? '',
-      'thickness': viewModel.selectedThickness?.toString().split('.').last ?? '',
-      'season': viewModel.selectedSeason?.toString().split('.').last ?? '',
-    };
+      final data = {
+        'title': _controllers['title']!.text,
+        'customerName': _controllers['customerName']!.text,
+        'description': _controllers['description']!.text,
+        for (var field in fields)
+          field: _controllers[field]?.text.isNotEmpty == true ? int.parse(
+              _controllers[field]!.text) : null,
+        'lining': viewModel.selectedLining
+            ?.toString()
+            .split('.')
+            .last ?? '',
+        'elasticity': viewModel.selectedElasticity
+            ?.toString()
+            .split('.')
+            .last ?? '',
+        'transparency': viewModel.selectedTransparency
+            ?.toString()
+            .split('.')
+            .last ?? '',
+        'texture': viewModel.selectedClothingTexture
+            ?.toString()
+            .split('.')
+            .last ?? '',
+        'fit': viewModel.selectedFit
+            ?.toString()
+            .split('.')
+            .last ?? '',
+        'thickness': viewModel.selectedThickness
+            ?.toString()
+            .split('.')
+            .last ?? '',
+        'season': viewModel.selectedSeason
+            ?.toString()
+            .split('.')
+            .last ?? '',
+      };
 
-    await FirebaseFirestore.instance.collection('images').doc(widget.imageId).update(data);
+      await FirebaseFirestore.instance.collection('images')
+          .doc(widget.imageId)
+          .update(data);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('사이즈 및 상세내용이 저장되었습니다.')),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('사이즈 및 상세내용이 저장되었습니다.')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('저장에 실패했습니다: $e')),
+      );
+    }
   }
 
   Future<void> _fetchDataFromFireStore() async {
