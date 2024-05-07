@@ -42,11 +42,13 @@ class _CategorySelectionPageState extends State<CategorySelectionPage> {
                       title: Text(
                         '$category (${refreshCountFileCategories.fileCounts[category]?.values.reduce((a, b) => a + b) ?? 0})',
                         style: selectedCategory == category
-                            ? TextStyle(
+                            ? const TextStyle(
+                                fontFamily: 'KoreanFont',
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black)
-                            : TextStyle(
+                            : const TextStyle(
+                                fontFamily: 'KoreanFont',
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white),
@@ -77,8 +79,8 @@ class _CategorySelectionPageState extends State<CategorySelectionPage> {
                         title: Text(
                           '$subCategory  (${_refreshCountFileCategories.fileCounts[selectedCategory]?[subCategory] ?? 0})',
                           style: selectedCategory == subCategory
-                              ? TextStyle(fontSize: 16, color: Colors.black)
-                              : TextStyle(fontSize: 16, color: Colors.white),
+                              ? TextStyle(fontFamily: 'KoreanFont',fontSize: 16, color: Colors.black)
+                              : TextStyle(fontFamily: 'KoreanFont',fontSize: 16, color: Colors.white),
                         ),
                         onTap: () {
                           if (widget.onCategorySelected != null) {

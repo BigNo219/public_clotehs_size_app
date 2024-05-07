@@ -19,10 +19,10 @@ Future<void> main() async {
   await dotenv.load(fileName: '.env');
   await Firebase.initializeApp();
   runApp(
-      ChangeNotifierProvider(
-        create: (context) => RadioViewModel(),
-        child:const MyApp(),
-      ),
+    ChangeNotifierProvider(
+      create: (context) => RadioViewModel(),
+      child: const MyApp(),
+    ),
   );
 }
 
@@ -36,7 +36,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Size App',
       theme: ThemeData(
+        fontFamily: 'EnglishFont',
         primarySwatch: Colors.blue,
+        textTheme: const TextTheme(
+          titleMedium: TextStyle(fontFamily: 'KoreanFont'), // 디버그 배너 폰트 변경
+        ),
       ),
       home: const MyHomePage(),
     );
@@ -50,7 +54,8 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateMixin {
+class _MyHomePageState extends State<MyHomePage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   final _countFileCategories = RefreshCountFileCategories(); // 카테고리 파일 개수 새로고침
@@ -91,8 +96,8 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("필요한 권한"),
-          content: const Text("앱에서 필요한 권한이 거부되었습니다. 설정에서 권한을 허용해주세요."),
+          title: const Text("필요한 권한", style: TextStyle(fontFamily: 'KoreanFont')),
+          content: const Text("앱에서 필요한 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.", style: TextStyle(fontFamily: 'KoreanFont')),
           actions: [
             TextButton(
               onPressed: () {
@@ -100,12 +105,12 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                 Navigator.of(context).pop();
               },
               child: const Text(
-                "설정으로 이동",
+                "설정으로 이동", style: TextStyle(fontFamily: 'KoreanFont')
               ),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("취소"),
+              child: const Text("취소", style: TextStyle(fontFamily: 'KoreanFont')),
             ),
           ],
         ),
@@ -206,13 +211,12 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
       String imagePath, String category, String subCategory) async {
     final cloudinaryImagePath = '$category/$subCategory';
 
-    final imageUrl = await uploadImageToCloudinary(
-        imagePath, cloudinaryImagePath);
+    final imageUrl =
+        await uploadImageToCloudinary(imagePath, cloudinaryImagePath);
     print('Image URL: $imageUrl');
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text('" $category -> $subCategory "에 저장되었습니다.')),
+      SnackBar(content: Text('" $category -> $subCategory "에 저장되었습니다.', style: const TextStyle(fontFamily: 'KoreanFont'))),
     );
 
     final imageData = {
@@ -239,14 +243,15 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
         title: const Text(
           '[ UN;BUTTY ] ... Size App',
           style: TextStyle(
-            color: Colors.black,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 24,
           ),
         ),
+        backgroundColor: Colors.black,
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete, color: Colors.black),
+            icon: const Icon(Icons.delete, color: Colors.grey),
             onPressed: () {
               Navigator.push(
                 context,
@@ -257,7 +262,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
             },
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black),
+            icon: const Icon(Icons.refresh, color: Colors.grey),
             onPressed: () {
               setState(() {
                 _countFileCategories.countFilesInCategories(
@@ -328,7 +333,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                   backgroundColor: Colors.grey[600],
                   foregroundColor: Colors.white,
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
@@ -345,7 +350,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                   backgroundColor: Colors.grey[800],
                   foregroundColor: Colors.white,
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),

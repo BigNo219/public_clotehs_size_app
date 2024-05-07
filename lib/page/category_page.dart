@@ -21,11 +21,11 @@ class CategoryPage extends StatelessWidget {
       create: (_) => CategoryPageModel(category, subCategory),
       child: Scaffold(
         appBar: AppBar(
-          title: Text('$category - $subCategory'),
+          title: Text('$category - $subCategory', style: const TextStyle(fontFamily: 'KoreanFamily')),
           actions: [
             Consumer<CategoryPageModel>(
               builder: (context, model, child) => IconButton(
-                icon: Icon(Icons.delete, color: Colors.black),
+                icon: const Icon(Icons.delete, color: Colors.black),
                 onPressed: model.isSelectionMode ? model.deleteImages : model.toggleSelectionMode,
               ),
             ),
@@ -34,16 +34,16 @@ class CategoryPage extends StatelessWidget {
         body: Consumer<CategoryPageModel>(
           builder: (context, model, child) {
             if (model.isLoading) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             } else if (model.hasError) {
               return Center(child: Text('Error: ${model.errorMessage}'));
             } else {
               final imageDataList = model.imageDataList;
               if (imageDataList.isEmpty) {
-                return Center(child: Text('해당 카테고리에 저장된 사진이 없습니다.'));
+                return Center(child: Text('해당 카테고리에 저장된 사진이 없습니다.', style: const TextStyle(fontFamily: 'KoreanFamily')));
               }
               return GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   crossAxisSpacing: 1,
                   mainAxisSpacing: 1,
@@ -176,16 +176,16 @@ class CategoryPageModel extends ChangeNotifier {
       context: navigatorKey.currentContext!,
       builder: (context) =>
           AlertDialog(
-            title: Text('사진 삭제'),
-            content: Text('선택한 이미지를 삭제하시겠습니까?'),
+            title: Text('사진 삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
+            content: Text('선택한 이미지를 삭제하시겠습니까?', style: const TextStyle(fontFamily: 'KoreanFamily')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: Text('취소'),
+                child: Text('취소', style: const TextStyle(fontFamily: 'KoreanFamily')),
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: Text('삭제'),
+                child: Text('삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
               ),
             ],
           ),

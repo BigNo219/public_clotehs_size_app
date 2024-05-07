@@ -95,7 +95,12 @@ class _PhotoPageState extends State<PhotoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('사이즈 및 상세내용 입력')),
+      appBar: AppBar(title: const Text(
+          'SIZE & DETAIL',
+          style: TextStyle(color: Colors.white),
+      ),
+        backgroundColor: Colors.grey,
+      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('images').doc(widget.imageId).snapshots(),
         builder: (context, snapshot) {
@@ -221,7 +226,7 @@ class _PhotoPageState extends State<PhotoPage> {
                         const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
                       ),
                     ),
-                    child: const Text('저장'),
+                    child: const Text('SAVE DETAILS'),
                   ),
                 ),
               ],
@@ -240,6 +245,7 @@ class _PhotoPageState extends State<PhotoPage> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(
+            fontFamily: 'KoreanFont',
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -257,6 +263,7 @@ class _PhotoPageState extends State<PhotoPage> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(
+            fontFamily: 'KoreanFont',
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),

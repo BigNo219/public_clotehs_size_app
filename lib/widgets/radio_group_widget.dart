@@ -28,6 +28,7 @@ class RadioGroupWidget<T> extends StatelessWidget {
             child: Text(
               title,
               style: const TextStyle(
+                fontFamily: 'KoreanFamily',
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold,
               ),
