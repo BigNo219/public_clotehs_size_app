@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ddundddun/page/delete_weekend_images_page.dart';
+import '../page/delete_selected_recent_photos_page.dart';
 
 class DeleteSelectionPage extends StatefulWidget {
   @override
@@ -9,10 +10,11 @@ class DeleteSelectionPage extends StatefulWidget {
 
 class _DeleteSelectionPageState extends State<DeleteSelectionPage> {
   final List<String> deletionOptions = [
-    '1주일된 사진들 삭제',
-    '2주일된 사진들 삭제',
-    '3주일된 사진들 삭제',
-    '4주일된 사진들 삭제',
+    '최근 사진 선택 삭제',
+    '1주일 이상된 사진들 삭제',
+    '2주일 이상된 사진들 삭제',
+    '3주일 이상된 사진들 삭제',
+    '4주일 이상된 사진들 삭제',
   ];
 
   List<QueryDocumentSnapshot> imagesForDeletion = [];
@@ -20,20 +22,54 @@ class _DeleteSelectionPageState extends State<DeleteSelectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('사진 삭제')),
+      appBar: AppBar(
+        title: const Text(
+          'Photos to Delete',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.grey,
+      ),
       body: ListView.builder(
-        itemCount: deletionOptions.length,
+        itemCount: deletionOptions.length + 1, // +1 은 구분선을 위한 추가 항목
         itemBuilder: (context, index) {
-          final option = deletionOptions[index];
+          if (index == 1) {
+            return const Divider(
+              color: Colors.grey,
+              height: 5,
+              thickness: 5,
+            );
+          }
+
+          final optionIndex = index > 1 ? index - 1 : index;
+          final option = deletionOptions[optionIndex];
+
           return ListTile(
-            title: Text(option),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DeleteImagesPage(option: option),
+            title: Text(
+                option,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
                 ),
-              );
+            ),
+            onTap: () {
+              if (option == '최근 사진 선택 삭제') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DeleteSelectedRecentPhotosPage(),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DeleteImagesPage(option: option),
+                  ),
+                );
+              }
             },
           );
         },
