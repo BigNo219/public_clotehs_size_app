@@ -78,9 +78,12 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   final clothingCategories = {
-    '상의': ['맨투맨', '반팔티', '후드티', '니트', '나시', '셔츠', '블라우스', '코트'],
-    '하의': ['바지', '롱 치마', '숏 치마', '스커트'],
-    '원피스': ['롱 원피스', '숏 원피스', '점프수트'],
+    '아우터': ['가디건', '자켓/코트(숏)', '자켓/코트(롱)', '점퍼', '베스트(패딩조끼)'],
+    '상의': ['티셔츠(긴소매)', '티셔츠(반소매)', '티셔츠(목폴라)', '민소매(조끼)', '블라우스(셔츠)'],
+    '원피스': ['긴팔원피스', '반팔원피스', '민소매원피스', '목폴라원피스'],
+    '패션소품': ['가방', '신발'],
+    '팬츠': ['긴바지', '반바지', '점프수트'],
+    '스커트': ['미니스커트', '롱스커트']
   };
 
   // 카메라 및 사진, 저장소 접근 권한 요청
@@ -176,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage>
                 final category = entry.key;
                 final subCategories = entry.value;
                 return ExpansionTile(
-                  title: Text(category),
+                  title: Text(category, style: const TextStyle(fontFamily: 'KoreanFont')),
                   children: subCategories.map((subCategory) {
                     return GestureDetector(
                       onTap: () {
@@ -186,7 +189,7 @@ class _MyHomePageState extends State<MyHomePage>
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                             vertical: 8.0, horizontal: 16.0),
-                        child: Text(subCategory),
+                        child: Text(subCategory, style: const TextStyle(fontFamily: 'KoreanFont')),
                       ),
                     );
                   }).toList(),
@@ -245,7 +248,7 @@ class _MyHomePageState extends State<MyHomePage>
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 24,
+            fontSize: 18,
           ),
         ),
         backgroundColor: Colors.black,
