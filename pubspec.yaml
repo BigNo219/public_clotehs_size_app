@@ -36,11 +36,27 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: EnglishFont
+      fonts:
+        - asset: assets/fonts/english_font.otf
+    - family: KoreanFont
+      fonts:
+        - asset: assets/fonts/korean_font.otf
+
+  assets:
+    - assets/logo.png
+    - assets/logo2.png
+    - .env
 # android 관련 설정
 android:
   bundle:
-    versionCode: 6
-    versionName: 1.0.5
+    versionCode: 7
+    versionName: 1.0.6
 # iOS 관련 설정
 ios:
   build:
@@ -49,7 +65,7 @@ ios:
   bundle_name: ddundddun
   bundle_display_name: UN;BUTTY SIZE
   bundle_identifier: com.example.ddundddun
-  bundle_version: 1.0.0+6
+  bundle_version: 1.0.0+7
   bundle_build_number: 1
   include_bitcode: true
   export_options_plist:
@@ -59,11 +75,3 @@ ios:
     - assets/logo2.png
     - .env
 
-flutter:
-
-  uses-material-design: true
-
-  assets:
-    - assets/logo.png
-    - assets/logo2.png
-    - .env
