@@ -55,8 +55,8 @@ flutter:
 # android 관련 설정
 android:
   bundle:
-    versionCode: 7
-    versionName: 1.0.6
+    versionCode: 1
+    versionName: 1.0.0
 # iOS 관련 설정
 ios:
   build:
@@ -65,7 +65,7 @@ ios:
   bundle_name: ddundddun
   bundle_display_name: UN;BUTTY SIZE
   bundle_identifier: com.example.ddundddun
-  bundle_version: 1.0.0+7
+  bundle_version: 1.0.0+1
   bundle_build_number: 1
   include_bitcode: true
   export_options_plist:
