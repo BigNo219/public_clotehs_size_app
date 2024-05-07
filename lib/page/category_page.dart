@@ -21,11 +21,19 @@ class CategoryPage extends StatelessWidget {
       create: (_) => CategoryPageModel(category, subCategory),
       child: Scaffold(
         appBar: AppBar(
-          title: Text('$category - $subCategory', style: const TextStyle(fontFamily: 'KoreanFamily')),
+          backgroundColor: Colors.grey,
+          title: Text(
+              '$category - $subCategory',
+              style: const TextStyle(fontFamily: 'KoreanFamily',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white
+              )
+          ),
           actions: [
             Consumer<CategoryPageModel>(
               builder: (context, model, child) => IconButton(
-                icon: const Icon(Icons.delete, color: Colors.black),
+                icon: const Icon(Icons.delete, color: Colors.white),
                 onPressed: model.isSelectionMode ? model.deleteImages : model.toggleSelectionMode,
               ),
             ),
