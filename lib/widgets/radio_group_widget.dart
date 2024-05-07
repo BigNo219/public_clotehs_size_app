@@ -49,7 +49,7 @@ class RadioGroupWidget<T> extends StatelessWidget {
                             groupValue: selectedValue,
                             onChanged: onChanged,
                           ),
-                          Text(labels[value]!),
+                          Text(labels[value]!, style: const TextStyle(fontFamily: 'KoreanFamily')),
                         ],
                       ))
                   .toList(),

@@ -19,7 +19,15 @@ class DeleteImagesPage extends StatelessWidget {
       create: (_) => DeleteImagesPageModel(option),
       child: Scaffold(
         appBar: AppBar(
-          title: Text('사진 삭제'),
+          backgroundColor: Colors.grey,
+          title: Text(
+              '사진 삭제',
+              style: TextStyle(
+                fontFamily: 'KoreanFamily',
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+          ),
         ),
         body: Consumer<DeleteImagesPageModel>(
           builder: (context, model, child) {
@@ -74,7 +82,8 @@ class DeleteImagesPage extends StatelessWidget {
         floatingActionButton: Consumer<DeleteImagesPageModel>(
           builder: (context, model, child) => FloatingActionButton(
             onPressed: model.deleteImages,
-            child: Icon(Icons.delete),
+            backgroundColor: Colors.black,
+            child: Icon(Icons.delete, color: Colors.white),
           ),
         ),
       ),

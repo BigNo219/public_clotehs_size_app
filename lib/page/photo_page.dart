@@ -246,10 +246,14 @@ class _PhotoPageState extends State<PhotoPage> {
           labelText: label,
           labelStyle: const TextStyle(
             fontFamily: 'KoreanFont',
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
           border: const OutlineInputBorder(),
+        ),
+        style: const TextStyle(
+          fontFamily: 'KoreanFont',
+          fontSize: 14,
         ),
       ),
     );
@@ -257,14 +261,14 @@ class _PhotoPageState extends State<PhotoPage> {
 
   Widget _buildMultilineTextField(String field, String label) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(18.0),
       child: TextField(
         controller: _controllers[field],
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(
             fontFamily: 'KoreanFont',
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
           border: const OutlineInputBorder(),
@@ -272,7 +276,7 @@ class _PhotoPageState extends State<PhotoPage> {
         ),
         maxLines: null,
         keyboardType: TextInputType.multiline,
-        style: const TextStyle(height: 1.0),
+        style: const TextStyle(height: 1.0, fontFamily: 'KoreanFont'),
       ),
     );
   }

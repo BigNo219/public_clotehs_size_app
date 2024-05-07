@@ -52,6 +52,7 @@ class _DeleteSelectionPageState extends State<DeleteSelectionPage> {
                 style: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
+                  fontFamily: 'KoreanFamily',
                 ),
             ),
             onTap: () {
