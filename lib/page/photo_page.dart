@@ -6,6 +6,7 @@ import '../widgets/custom_divider_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../widgets/radio_group_widget.dart';
+import '../widgets/radio_more_check_group_widget.dart';
 
 class PhotoPage extends StatefulWidget {
   final String imageUrl;
@@ -41,7 +42,7 @@ class _PhotoPageState extends State<PhotoPage> {
         'customerName': _controllers['customerName']!.text,
         'description': _controllers['description']!.text,
         for (var field in fields)
-          field: _controllers[field]?.text.isNotEmpty == true ? int.parse(
+          field: _controllers[field]?.text.isNotEmpty == true ? double.parse(
               _controllers[field]!.text) : null,
         'lining': viewModel.selectedLining
             ?.toString()
@@ -67,10 +68,9 @@ class _PhotoPageState extends State<PhotoPage> {
             ?.toString()
             .split('.')
             .last ?? '',
-        'season': viewModel.selectedSeason
-            ?.toString()
-            .split('.')
-            .last ?? '',
+        'seasons': viewModel.selectedSeasons
+            ?.map((season) => season.toString().split('.').last)
+            .toList() ?? [],
       };
 
       await FirebaseFirestore.instance.collection('images')
@@ -141,8 +141,8 @@ class _PhotoPageState extends State<PhotoPage> {
                   placeholder: (context, url) => const CircularProgressIndicator(),
                   errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
-                _buildTextField('title', '제목'),
-                _buildTextField('customerName', '거래처 명'),
+                _buildMultilineTextField('title', '제목'),
+                _buildMultilineTextField('customerName', '거래처 명'),
                 _buildMultilineTextField('description', '추가 정보'),
                 ...fields.map((field) => _buildTextField(field, field)).toList(),
                 Consumer<RadioViewModel>(
@@ -197,12 +197,12 @@ class _PhotoPageState extends State<PhotoPage> {
                           onChanged: viewModel.setSelectedThickness,
                         ),
                         CustomDivider(),
-                        RadioGroupWidget<Season>(
+                        MoreCheckboxGroupWidget<Season>(
                           title: '계절감',
                           values: Season.values,
                           labels: CategoryInfo.seasonLabels,
-                          selectedValue: viewModel.selectedSeason,
-                          onChanged: viewModel.setSelectedSeason,
+                          selectedValues: viewModel.selectedSeasons ?? [],
+                          onChanged: viewModel.setSelectedSeasons,
                         ),
                         CustomDivider(),
                       ],
@@ -255,6 +255,7 @@ class _PhotoPageState extends State<PhotoPage> {
           fontFamily: 'KoreanFont',
           fontSize: 14,
         ),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
       ),
     );
   }

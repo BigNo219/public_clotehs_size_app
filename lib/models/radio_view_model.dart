@@ -10,7 +10,7 @@ class RadioViewModel extends ChangeNotifier {
   ClothingTexture? _selectedClothingTexture;
   Fit? _selectedFit;
   Thickness? _selectedThickness;
-  Season? _selectedSeason;
+  // Season? _selectedSeason;
 
   Lining? get selectedLining => _selectedLining;
   Elasticity? get selectedElasticity => _selectedElasticity;
@@ -18,7 +18,11 @@ class RadioViewModel extends ChangeNotifier {
   ClothingTexture? get selectedClothingTexture => _selectedClothingTexture;
   Fit? get selectedFit => _selectedFit;
   Thickness? get selectedThickness => _selectedThickness;
-  Season? get selectedSeason => _selectedSeason;
+  // Season? get selectedSeason => _selectedSeason;
+
+  List<Season>? _selectedSeasons;
+  List<Season>? get selectedSeasons => _selectedSeasons;
+
 
   final ScrollController scrollController = ScrollController();
 
@@ -52,8 +56,9 @@ class RadioViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setSelectedSeason(Season? value) {
-    _selectedSeason = value;
+  void setSelectedSeasons(List<Season>? values) {
+    // _selectedSeason = value;
+    _selectedSeasons = values;
     notifyListeners();
   }
 
@@ -68,7 +73,18 @@ class RadioViewModel extends ChangeNotifier {
       setSelectedClothingTexture(ClothingTexture.values.firstWhereOrNull((e) => e.toString().split('.').last == data['texture']));
       setSelectedFit(Fit.values.firstWhereOrNull((e) => e.toString().split('.').last == data['fit']));
       setSelectedThickness(Thickness.values.firstWhereOrNull((e) => e.toString().split('.').last == data['thickness']));
-      setSelectedSeason(Season.values.firstWhereOrNull((e) => e.toString().split('.').last == data['season']));
+      // setSelectedSeason(Season.values.firstWhereOrNull((e) => e.toString().split('.').last == data['season']));
+
+      final dynamic seasonsData = data['seasons'] ?? data['season'];
+      if (seasonsData is String) {
+        final season = Season.values.firstWhereOrNull((e) => e.toString().split('.').last == seasonsData);
+        setSelectedSeasons(season != null ? [season] : null);
+      } else if (seasonsData is List<dynamic>) {
+        setSelectedSeasons(seasonsData.map((s) => Season.values.firstWhereOrNull((e) => e.toString().split('.').last == s)).whereType<Season>().toList());
+      } else {
+        setSelectedSeasons(null);
+      }
+      // setSelectedSeasons((data['seasons'] as List<dynamic>?)?.map((s) => Season.values.firstWhereOrNull((e) => e.toString().split('.').last == s)).whereType<Season>().toList());
     }
   }
 }
