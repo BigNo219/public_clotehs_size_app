@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
-import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
@@ -19,7 +18,7 @@ class DeleteSelectedRecentPhotosPageModel extends ChangeNotifier {
     final snapshot = await FirebaseFirestore.instance
         .collection('images')
         .orderBy('timestamp', descending: true)
-        .limit(10)
+        .limit(30)
         .get();
 
     _imageDocs = snapshot.docs;
