@@ -15,7 +15,7 @@ class RecentPhotosPageModel extends ChangeNotifier {
     final snapshot = await FirebaseFirestore.instance
         .collection('images')
         .orderBy('timestamp', descending: true)
-        .limit(10)
+        .limit(20) // 사진 가져오는 갯수
         .get();
 
     _imageDocs = snapshot.docs;
@@ -33,10 +33,10 @@ class RecentPhotosPage extends StatelessWidget {
           builder: (context, model, child) {
             final imageDocs = model.imageDocs;
             if (imageDocs.isEmpty) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
             return GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,
@@ -56,8 +56,8 @@ class RecentPhotosPage extends StatelessWidget {
                     child: CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) => Icon(Icons.error),
+                      placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) => const Icon(Icons.error),
                     ),
                   ),
                 );
