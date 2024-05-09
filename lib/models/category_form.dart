@@ -7,6 +7,7 @@ class CategoryInfo {
     Fit: '핏감',
     Thickness: '두께감',
     Season: '계절감',
+    ShoppingMalls: '쇼핑몰',
   };
 
   static final liningLabels = {
@@ -49,6 +50,12 @@ class CategoryInfo {
     Season.springFall: '봄가을',
     Season.summer: '여름',
     Season.winter: '겨울',
+  };
+
+  static final shoppingMallsLabels = {
+    ShoppingMalls.UNBUTTY: 'UNBUTTY',
+    ShoppingMalls.MYUARIN: 'MYUARIN',
+    ShoppingMalls.NONBETTER: 'NON-BETTER',
   };
 
   static final categoryForms = {
@@ -94,6 +101,7 @@ enum ClothingTexture { soft, normal, rough }
 enum Fit { tight, regular, loose }
 enum Thickness { thick, normal, thin }
 enum Season { springFall, summer, winter }
+enum ShoppingMalls { UNBUTTY, MYUARIN, NONBETTER }
 
 class TopSizeInfo {
   double? totalLength;
