@@ -71,6 +71,9 @@ class _PhotoPageState extends State<PhotoPage> {
         'seasons': viewModel.selectedSeasons
             ?.map((season) => season.toString().split('.').last)
             .toList() ?? [],
+        'shoppingMalls' : viewModel.selectedShoppingMalls
+            ?.map((mall) => mall.toString().split('.').last)
+            .toList() ?? [],
       };
 
       await FirebaseFirestore.instance.collection('images')
@@ -203,6 +206,14 @@ class _PhotoPageState extends State<PhotoPage> {
                           labels: CategoryInfo.seasonLabels,
                           selectedValues: viewModel.selectedSeasons ?? [],
                           onChanged: viewModel.setSelectedSeasons,
+                        ),
+                        CustomDivider(),
+                        MoreCheckboxGroupWidget<ShoppingMalls>(
+                          title: '쇼핑몰',
+                          values: ShoppingMalls.values,
+                          labels: CategoryInfo.shoppingMallsLabels,
+                          selectedValues: viewModel.selectedShoppingMalls ?? [],
+                          onChanged: viewModel.setSelectedShoppingMalls,
                         ),
                         CustomDivider(),
                       ],
