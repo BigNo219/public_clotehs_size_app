@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../main.dart';
+import '../widgets/custom_divider_widget.dart';
 
 class CategoryPage extends StatelessWidget {
   final String category;
@@ -22,84 +23,104 @@ class CategoryPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.grey,
-          title: Text(
-              '$category - $subCategory',
-              style: const TextStyle(fontFamily: 'KoreanFamily',
+          title: Text('$category - $subCategory',
+              style: const TextStyle(
+                  fontFamily: 'KoreanFamily',
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white
-              )
-          ),
+                  color: Colors.white)),
           actions: [
             Consumer<CategoryPageModel>(
-              builder: (context, model, child) => IconButton(
-                icon: const Icon(Icons.delete, color: Colors.white),
-                onPressed: model.isSelectionMode ? model.deleteImages : model.toggleSelectionMode,
+              builder: (context, model, child) =>
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.white),
+                    onPressed: model.isSelectionMode
+                        ? model.deleteImages
+                        : model.toggleSelectionMode,
+                  ),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            _buildFilterCheckboxes(),
+            Expanded(
+              child: Consumer<CategoryPageModel>(
+                builder: (context, model, child) {
+                  if (model.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (model.hasError) {
+                    return Center(child: Text('Error: ${model.errorMessage}'));
+                  } else {
+                    final imageDataList = model.imageDataList;
+                    if (imageDataList.isEmpty) {
+                      return Center(
+                          child: const Text('해당 카테고리에 저장된 사진이 없습니다.',
+                              style:
+                              const TextStyle(fontFamily: 'KoreanFamily')));
+                    }
+                    return GridView.builder(
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 1,
+                        mainAxisSpacing: 1,
+                      ),
+                      padding: EdgeInsets.all(10),
+                      itemCount: imageDataList.length,
+                      itemBuilder: (context, index) {
+                        final imageData = imageDataList[index];
+                        final imageUrl = imageData['url'];
+                        final imageId = imageData['id'];
+                        final category = imageData['subCategory'];
+                        final isSelected = model.isImageSelected(imageId);
+                        return GestureDetector(
+                          onTap: model.isSelectionMode
+                              ? () => model.selectImage(imageId)
+                              : () =>
+                              _openPhotoPage(
+                                  context, imageUrl, category, imageId),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: CachedNetworkImage(
+                                  imageUrl: imageUrl,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) =>
+                                      Center(
+                                          child: CircularProgressIndicator()),
+                                  errorWidget: (context, url, error) =>
+                                      Icon(Icons.error),
+                                ),
+                              ),
+                              if (model.isSelectionMode)
+                                Positioned(
+                                  top: 5,
+                                  right: 5,
+                                  child: Icon(
+                                    isSelected
+                                        ? Icons.check_circle
+                                        : Icons.radio_button_unchecked,
+                                    color: isSelected
+                                        ? Colors.green
+                                        : Colors.white,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  }
+                },
               ),
             ),
           ],
         ),
-        body: Consumer<CategoryPageModel>(
-          builder: (context, model, child) {
-            if (model.isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (model.hasError) {
-              return Center(child: Text('Error: ${model.errorMessage}'));
-            } else {
-              final imageDataList = model.imageDataList;
-              if (imageDataList.isEmpty) {
-                return Center(child: Text('해당 카테고리에 저장된 사진이 없습니다.', style: const TextStyle(fontFamily: 'KoreanFamily')));
-              }
-              return GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 1,
-                  mainAxisSpacing: 1,
-                ),
-                padding: EdgeInsets.all(10),
-                itemCount: imageDataList.length,
-                itemBuilder: (context, index) {
-                  final imageData = imageDataList[index];
-                  final imageUrl = imageData['url'];
-                  final imageId = imageData['id'];
-                  final category = imageData['subCategory'];
-                  final isSelected = model.isImageSelected(imageId);
-                  return GestureDetector(
-                    onTap: model.isSelectionMode
-                        ? () => model.selectImage(imageId)
-                        : () => _openPhotoPage(context, imageUrl, category, imageId),
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                            errorWidget: (context, url, error) => Icon(Icons.error),
-                          ),
-                        ),
-                        if (model.isSelectionMode)
-                          Positioned(
-                            top: 5,
-                            right: 5,
-                            child: Icon(
-                              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                              color: isSelected ? Colors.green : Colors.white,
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            }
-          },
-        ),
       ),
     );
   }
-
 
   void _openPhotoPage(BuildContext context, String imageUrl, String category,
       String imageId) {
@@ -109,6 +130,40 @@ class CategoryPage extends StatelessWidget {
         builder: (context) =>
             PhotoPage(imageUrl: imageUrl, category: category, imageId: imageId),
       ),
+    );
+  }
+
+  Widget _buildFilterCheckboxes() {
+    return Consumer<CategoryPageModel>(
+      builder: (context, model, child) {
+        return Container(
+            color: Colors.grey[200],
+            padding: EdgeInsets.all(3.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildFilterCheckbox('UNBUTTY', model),
+                _buildFilterCheckbox('MYUARIN', model),
+                _buildFilterCheckbox('NON-BETTER', model),
+              ],
+            ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterCheckbox(String label, CategoryPageModel model) {
+    return Row(
+      children: [
+        Checkbox(
+          value: model.selectedFilters.contains(label),
+          onChanged: (value) => model.toggleFilter(label),
+        ),
+        Text(label,
+            style: const TextStyle(
+              fontSize: 10,
+            )),
+      ],
     );
   }
 }
@@ -122,6 +177,9 @@ class CategoryPageModel extends ChangeNotifier {
   List<Map<String, dynamic>> imageDataList = [];
   bool isSelectionMode = false;
   final Set<String> selectedImageIds = {};
+
+  // 필터링을 위한 변수
+  List<String> selectedFilters = [];
 
   CategoryPageModel(this.category, this.subCategory) {
     loadImageData();
@@ -142,22 +200,36 @@ class CategoryPageModel extends ChangeNotifier {
 
   Future<List<Map<String, dynamic>>> _getImageDataList(String category,
       String subCategory) async {
-    final querySnapshot = await FirebaseFirestore.instance
+    Query query = FirebaseFirestore.instance
         .collection('images')
         .where('category', isEqualTo: category)
-        .where('subCategory', isEqualTo: subCategory)
-        .get();
+        .where('subCategory', isEqualTo: subCategory);
+
+    if (selectedFilters.isNotEmpty) {
+      query = query.where('shoppingMalls', arrayContainsAny: selectedFilters);
+    }
+
+    final querySnapshot = await query.get();
 
     return querySnapshot.docs
         .map((doc) =>
     {
       'id': doc.id,
-      'url': doc.data()['url'],
-      'category': doc.data()['category'],
-      'subCategory': doc.data()['subCategory'],
+      'url': (doc.data() as Map<String, dynamic>?)?['url'],
+      'category': (doc.data() as Map<String, dynamic>?)?['category'],
+      'subCategory': (doc.data() as Map<String, dynamic>?)?['subCategory'],
     })
         .toList()
         .cast<Map<String, dynamic>>();
+  }
+
+  void toggleFilter(String filter) {
+    if (selectedFilters.contains(filter)) {
+      selectedFilters.remove(filter);
+    } else {
+      selectedFilters.add(filter);
+    }
+    loadImageData();
   }
 
   void toggleSelectionMode() {
@@ -184,16 +256,20 @@ class CategoryPageModel extends ChangeNotifier {
       context: navigatorKey.currentContext!,
       builder: (context) =>
           AlertDialog(
-            title: Text('사진 삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
-            content: Text('선택한 이미지를 삭제하시겠습니까?', style: const TextStyle(fontFamily: 'KoreanFamily')),
+            title:
+            Text('사진 삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
+            content: Text('선택한 이미지를 삭제하시겠습니까?',
+                style: const TextStyle(fontFamily: 'KoreanFamily')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: Text('취소', style: const TextStyle(fontFamily: 'KoreanFamily')),
+                child:
+                Text('취소', style: const TextStyle(fontFamily: 'KoreanFamily')),
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: Text('삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
+                child:
+                Text('삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
               ),
             ],
           ),
