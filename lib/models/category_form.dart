@@ -55,7 +55,7 @@ class CategoryInfo {
   static final shoppingMallsLabels = {
     ShoppingMalls.UNBUTTY: 'UNBUTTY',
     ShoppingMalls.MYUARIN: 'MYUARIN',
-    ShoppingMalls.NONBETTER: 'NON-BETTER',
+    ShoppingMalls.NONBETTER: 'NONBETTER',
   };
 
   static final categoryForms = {
