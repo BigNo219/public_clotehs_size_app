@@ -60,6 +60,8 @@ class _MyHomePageState extends State<MyHomePage>
 
   final _countFileCategories = RefreshCountFileCategories(); // 카테고리 파일 개수 새로고침
 
+  late RecentPhotosPageModel _recentPhotosPageModel;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +71,9 @@ class _MyHomePageState extends State<MyHomePage>
       initialIndex: 1,
     );
     _requestPermission();
+
+    _recentPhotosPageModel = RecentPhotosPageModel();
+    _recentPhotosPageModel.fetchImages();
   }
 
   @override
@@ -99,21 +104,23 @@ class _MyHomePageState extends State<MyHomePage>
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("필요한 권한", style: TextStyle(fontFamily: 'KoreanFont')),
-          content: const Text("앱에서 필요한 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.", style: TextStyle(fontFamily: 'KoreanFont')),
+          title:
+              const Text("필요한 권한", style: TextStyle(fontFamily: 'KoreanFont')),
+          content: const Text("앱에서 필요한 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.",
+              style: TextStyle(fontFamily: 'KoreanFont')),
           actions: [
             TextButton(
               onPressed: () {
                 openAppSettings(); // 사용자가 앱 설정 페이지로 이동시키는 함수
                 Navigator.of(context).pop();
               },
-              child: const Text(
-                "설정으로 이동", style: TextStyle(fontFamily: 'KoreanFont')
-              ),
+              child: const Text("설정으로 이동",
+                  style: TextStyle(fontFamily: 'KoreanFont')),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("취소", style: TextStyle(fontFamily: 'KoreanFont')),
+              child:
+                  const Text("취소", style: TextStyle(fontFamily: 'KoreanFont')),
             ),
           ],
         ),
@@ -179,7 +186,8 @@ class _MyHomePageState extends State<MyHomePage>
                 final category = entry.key;
                 final subCategories = entry.value;
                 return ExpansionTile(
-                  title: Text(category, style: const TextStyle(fontFamily: 'KoreanFont')),
+                  title: Text(category,
+                      style: const TextStyle(fontFamily: 'KoreanFont')),
                   children: subCategories.map((subCategory) {
                     return GestureDetector(
                       onTap: () {
@@ -189,7 +197,8 @@ class _MyHomePageState extends State<MyHomePage>
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                             vertical: 8.0, horizontal: 16.0),
-                        child: Text(subCategory, style: const TextStyle(fontFamily: 'KoreanFont')),
+                        child: Text(subCategory,
+                            style: const TextStyle(fontFamily: 'KoreanFont')),
                       ),
                     );
                   }).toList(),
@@ -219,7 +228,9 @@ class _MyHomePageState extends State<MyHomePage>
     print('Image URL: $imageUrl');
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('" $category -> $subCategory "에 저장되었습니다.', style: const TextStyle(fontFamily: 'KoreanFont'))),
+      SnackBar(
+          content: Text('" $category -> $subCategory "에 저장되었습니다.',
+              style: const TextStyle(fontFamily: 'KoreanFont'))),
     );
 
     final imageData = {
@@ -240,77 +251,79 @@ class _MyHomePageState extends State<MyHomePage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          '[ UN;BUTTY ] ... Size App',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+    return ChangeNotifierProvider(
+      create: (_) => _recentPhotosPageModel,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text(
+            '[ UN;BUTTY ] ... Size App',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
-        ),
-        backgroundColor: Colors.black,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.grey),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DeleteSelectionPage(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.grey),
-            onPressed: () {
-              setState(() {
-                _countFileCategories.countFilesInCategories(
-                    clothingCategories); // 카테고리 파일 개수 새로고침
-              });
-            },
-          ),
-        ],
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          RecentPhotosPage(),
-          _buildHomeTab(),
-          CategorySelectionPage(),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        height: 60,
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: TabBar(
-          indicatorColor: Colors.black38,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.grey,
-          labelStyle: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
-          ),
-          controller: _tabController,
-          tabs: [
-            const Tab(text: 'Recent'),
-            const Tab(text: 'Home'),
-            const Tab(text: 'Categories'),
+          backgroundColor: Colors.black,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.grey),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DeleteSelectionPage(),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.grey),
+              onPressed: () {
+                setState(() {
+                  _countFileCategories.countFilesInCategories(clothingCategories);
+                });
+              },
+            ),
           ],
+        ),
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            RecentPhotosPage(),
+            _buildHomeTab(),
+            CategorySelectionPage(),
+          ],
+        ),
+        bottomNavigationBar: Container(
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: TabBar(
+            indicatorColor: Colors.black38,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.grey,
+            labelStyle: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+            ),
+            controller: _tabController,
+            tabs: [
+              const Tab(text: 'Recent'),
+              const Tab(text: 'Home'),
+              const Tab(text: 'Categories'),
+            ],
+          ),
         ),
       ),
     );
