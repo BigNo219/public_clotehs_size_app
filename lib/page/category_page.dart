@@ -8,7 +8,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../main.dart';
-import '../widgets/custom_divider_widget.dart';
 
 class CategoryPage extends StatelessWidget {
   final String category;
@@ -31,13 +30,12 @@ class CategoryPage extends StatelessWidget {
                   color: Colors.white)),
           actions: [
             Consumer<CategoryPageModel>(
-              builder: (context, model, child) =>
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.white),
-                    onPressed: model.isSelectionMode
-                        ? model.deleteImages
-                        : model.toggleSelectionMode,
-                  ),
+              builder: (context, model, child) => IconButton(
+                icon: const Icon(Icons.delete, color: Colors.white),
+                onPressed: model.isSelectionMode
+                    ? model.deleteImages
+                    : model.toggleSelectionMode,
+              ),
             ),
           ],
         ),
@@ -57,11 +55,11 @@ class CategoryPage extends StatelessWidget {
                       return Center(
                           child: const Text('해당 카테고리에 저장된 사진이 없습니다.',
                               style:
-                              const TextStyle(fontFamily: 'KoreanFamily')));
+                                  const TextStyle(fontFamily: 'KoreanFamily')));
                     }
                     return GridView.builder(
                       gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
                         crossAxisSpacing: 1,
                         mainAxisSpacing: 1,
@@ -77,8 +75,7 @@ class CategoryPage extends StatelessWidget {
                         return GestureDetector(
                           onTap: model.isSelectionMode
                               ? () => model.selectImage(imageId)
-                              : () =>
-                              _openPhotoPage(
+                              : () => _openPhotoPage(
                                   context, imageUrl, category, imageId),
                           child: Stack(
                             children: [
@@ -87,9 +84,8 @@ class CategoryPage extends StatelessWidget {
                                 child: CachedNetworkImage(
                                   imageUrl: imageUrl,
                                   fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      Center(
-                                          child: CircularProgressIndicator()),
+                                  placeholder: (context, url) => Center(
+                                      child: CircularProgressIndicator()),
                                   errorWidget: (context, url, error) =>
                                       Icon(Icons.error),
                                 ),
@@ -122,8 +118,8 @@ class CategoryPage extends StatelessWidget {
     );
   }
 
-  void _openPhotoPage(BuildContext context, String imageUrl, String category,
-      String imageId) {
+  void _openPhotoPage(
+      BuildContext context, String imageUrl, String category, String imageId) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -137,16 +133,17 @@ class CategoryPage extends StatelessWidget {
     return Consumer<CategoryPageModel>(
       builder: (context, model, child) {
         return Container(
-            color: Colors.grey[200],
-            padding: EdgeInsets.all(3.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildFilterCheckbox('UNBUTTY', model),
-                _buildFilterCheckbox('MYUARIN', model),
-                _buildFilterCheckbox('NON-BETTER', model),
-              ],
-            ),
+          height: 40,
+          color: Colors.grey[200],
+          padding: EdgeInsets.all(3.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildFilterCheckbox('UNBUTTY', model),
+              _buildFilterCheckbox('MYUARIN', model),
+              _buildFilterCheckbox('NONBETTER', model),
+            ],
+          ),
         );
       },
     );
@@ -198,8 +195,8 @@ class CategoryPageModel extends ChangeNotifier {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _getImageDataList(String category,
-      String subCategory) async {
+  Future<List<Map<String, dynamic>>> _getImageDataList(
+      String category, String subCategory) async {
     Query query = FirebaseFirestore.instance
         .collection('images')
         .where('category', isEqualTo: category)
@@ -212,13 +209,13 @@ class CategoryPageModel extends ChangeNotifier {
     final querySnapshot = await query.get();
 
     return querySnapshot.docs
-        .map((doc) =>
-    {
-      'id': doc.id,
-      'url': (doc.data() as Map<String, dynamic>?)?['url'],
-      'category': (doc.data() as Map<String, dynamic>?)?['category'],
-      'subCategory': (doc.data() as Map<String, dynamic>?)?['subCategory'],
-    })
+        .map((doc) => {
+              'id': doc.id,
+              'url': (doc.data() as Map<String, dynamic>?)?['url'],
+              'category': (doc.data() as Map<String, dynamic>?)?['category'],
+              'subCategory':
+                  (doc.data() as Map<String, dynamic>?)?['subCategory'],
+            })
         .toList()
         .cast<Map<String, dynamic>>();
   }
@@ -254,25 +251,24 @@ class CategoryPageModel extends ChangeNotifier {
   Future<void> deleteImages() async {
     final confirm = await showDialog(
       context: navigatorKey.currentContext!,
-      builder: (context) =>
-          AlertDialog(
-            title:
+      builder: (context) => AlertDialog(
+        title:
             Text('사진 삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
-            content: Text('선택한 이미지를 삭제하시겠습니까?',
-                style: const TextStyle(fontFamily: 'KoreanFamily')),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child:
+        content: Text('선택한 이미지를 삭제하시겠습니까?',
+            style: const TextStyle(fontFamily: 'KoreanFamily')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child:
                 Text('취소', style: const TextStyle(fontFamily: 'KoreanFamily')),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child:
-                Text('삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
-              ),
-            ],
           ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child:
+                Text('삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
+          ),
+        ],
+      ),
     );
 
     if (confirm == true) {
@@ -291,18 +287,14 @@ class CategoryPageModel extends ChangeNotifier {
 
         if (url.isNotEmpty) {
           final parts = url.split('/');
-          final fileName = parts.last
-              .split('.')
-              .first;
+          final fileName = parts.last.split('.').first;
           final folderPathParts = parts.sublist(7, parts.length - 1);
           final decodedPathParts =
-          folderPathParts.map(Uri.decodeComponent).toList();
+              folderPathParts.map(Uri.decodeComponent).toList();
           final publicId = decodedPathParts.join('/') + '/' + fileName;
 
           final timestamp =
-          (DateTime
-              .now()
-              .millisecondsSinceEpoch / 1000).round();
+              (DateTime.now().millisecondsSinceEpoch / 1000).round();
 
           final params = {
             'public_id': publicId,
@@ -314,7 +306,7 @@ class CategoryPageModel extends ChangeNotifier {
               .join('&');
 
           final signature =
-          sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
+              sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
 
           final response = await http.post(
             Uri.parse('$cloudinaryUrl$cloudName$cloudinaryEndpoint'),
@@ -333,8 +325,7 @@ class CategoryPageModel extends ChangeNotifier {
                 .delete();
           } else {
             print(
-                'Failed to delete image from Cloudinary. Status code: ${response
-                    .statusCode}');
+                'Failed to delete image from Cloudinary. Status code: ${response.statusCode}');
           }
         }
       }
