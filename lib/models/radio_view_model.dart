@@ -88,8 +88,12 @@ class RadioViewModel extends ChangeNotifier {
         setSelectedSeasons(null);
       }
 
-      setSelectedShoppingMalls(data['shoppingMalls'].map((s) => ShoppingMalls.values.firstWhereOrNull((e) => e.toString().split('.').last == s)).whereType<ShoppingMalls>().toList());
-    }
+      final dynamic shoppingMallsData = data['shoppingMalls'];
+      if (shoppingMallsData is List<dynamic>) {
+        setSelectedShoppingMalls(shoppingMallsData.map((s) => ShoppingMalls.values.firstWhereOrNull((e) => e.toString().split('.').last == s)).whereType<ShoppingMalls>().toList());
+      } else {
+        setSelectedShoppingMalls(null);
+      }    }
   }
 }
 
