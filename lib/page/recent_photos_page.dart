@@ -23,7 +23,7 @@ class RecentPhotosPageModel extends ChangeNotifier {
     Query query = FirebaseFirestore.instance
         .collection('images')
         .orderBy('timestamp', descending: true)
-        .limit(24);
+        .limit(15);
 
     if (_lastDocument != null) {
       query = query.startAfterDocument(_lastDocument!);
