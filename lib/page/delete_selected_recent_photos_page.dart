@@ -18,7 +18,7 @@ class DeleteSelectedRecentPhotosPageModel extends ChangeNotifier {
     Query query = FirebaseFirestore.instance
         .collection('images')
         .orderBy('timestamp', descending: true)
-        .limit(15);
+        .limit(12);
 
     if (lastDocument != null) {
       query = query.startAfterDocument(lastDocument);
