@@ -45,7 +45,7 @@ class CategoryPage extends StatelessWidget {
             Expanded(
               child: Consumer<CategoryPageModel>(
                 builder: (context, model, child) {
-                  if (model.isLoading) {
+                  if (model.isLoading && model.imageDataList.isEmpty) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (model.hasError) {
                     return Center(child: Text('Error: ${model.errorMessage}'));
@@ -55,58 +55,74 @@ class CategoryPage extends StatelessWidget {
                       return Center(
                           child: const Text('해당 카테고리에 저장된 사진이 없습니다.',
                               style:
-                                  const TextStyle(fontFamily: 'KoreanFamily')));
+                              const TextStyle(fontFamily: 'KoreanFamily')));
                     }
-                    return GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 1,
-                        mainAxisSpacing: 1,
-                      ),
-                      padding: EdgeInsets.all(10),
-                      itemCount: imageDataList.length,
-                      itemBuilder: (context, index) {
-                        final imageData = imageDataList[index];
-                        final imageUrl = imageData['url'];
-                        final imageId = imageData['id'];
-                        final category = imageData['subCategory'];
-                        final isSelected = model.isImageSelected(imageId);
-                        return GestureDetector(
-                          onTap: model.isSelectionMode
-                              ? () => model.selectImage(imageId)
-                              : () => _openPhotoPage(
-                                  context, imageUrl, category, imageId),
-                          child: Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: CachedNetworkImage(
-                                  imageUrl: imageUrl,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Center(
-                                      child: CircularProgressIndicator()),
-                                  errorWidget: (context, url, error) =>
-                                      Icon(Icons.error),
-                                ),
-                              ),
-                              if (model.isSelectionMode)
-                                Positioned(
-                                  top: 5,
-                                  right: 5,
-                                  child: Icon(
-                                    isSelected
-                                        ? Icons.check_circle
-                                        : Icons.radio_button_unchecked,
-                                    color: isSelected
-                                        ? Colors.green
-                                        : Colors.white,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
+                    return NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification scrollInfo) {
+                        if (!model.isLoading &&
+                            scrollInfo.metrics.pixels ==
+                                scrollInfo.metrics.maxScrollExtent) {
+                          model.loadImageData();
+                        }
+                        return true;
                       },
+                      child: GridView.builder(
+                        gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 1,
+                          mainAxisSpacing: 1,
+                        ),
+                        padding: EdgeInsets.all(10),
+                        itemCount: imageDataList.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index < imageDataList.length) {
+                            final imageData = imageDataList[index];
+                            final imageUrl = imageData['url'];
+                            final imageId = imageData['id'];
+                            final category = imageData['subCategory'];
+                            final isSelected = model.isImageSelected(imageId);
+                            return GestureDetector(
+                              onTap: model.isSelectionMode
+                                  ? () => model.selectImage(imageId)
+                                  : () => _openPhotoPage(
+                                  context, imageUrl, category, imageId),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: CachedNetworkImage(
+                                      imageUrl: imageUrl,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Center(
+                                          child: CircularProgressIndicator()),
+                                      errorWidget: (context, url, error) =>
+                                          Icon(Icons.error),
+                                    ),
+                                  ),
+                                  if (model.isSelectionMode)
+                                    Positioned(
+                                      top: 5,
+                                      right: 5,
+                                      child: Icon(
+                                        isSelected
+                                            ? Icons.check_circle
+                                            : Icons.radio_button_unchecked,
+                                        color: isSelected
+                                            ? Colors.green
+                                            : Colors.white,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          } else if (model.isLoading) {
+                            return Center(child: CircularProgressIndicator());
+                          } else {
+                            return SizedBox.shrink();
+                          }
+                        },
+                      ),
                     );
                   }
                 },
@@ -118,8 +134,8 @@ class CategoryPage extends StatelessWidget {
     );
   }
 
-  void _openPhotoPage(
-      BuildContext context, String imageUrl, String category, String imageId) {
+  void _openPhotoPage(BuildContext context, String imageUrl, String category,
+      String imageId) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -182,8 +198,11 @@ class CategoryPageModel extends ChangeNotifier {
     loadImageData();
   }
 
+  DocumentSnapshot? _lastDocument;
+
   Future<void> loadImageData() async {
     try {
+      final newImageDataList = await _getImageDataList(category, subCategory);
       imageDataList = await _getImageDataList(category, subCategory);
       isLoading = false;
       notifyListeners();
@@ -195,12 +214,18 @@ class CategoryPageModel extends ChangeNotifier {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _getImageDataList(
-      String category, String subCategory) async {
+  Future<List<Map<String, dynamic>>> _getImageDataList(String category,
+      String subCategory) async {
     Query query = FirebaseFirestore.instance
         .collection('images')
         .where('category', isEqualTo: category)
-        .where('subCategory', isEqualTo: subCategory);
+        .where('subCategory', isEqualTo: subCategory)
+        .orderBy('timestamp', descending: true)
+        .limit(15);
+
+    if (_lastDocument != null) {
+      query = query.startAfterDocument(_lastDocument!);
+    }
 
     if (selectedFilters.isNotEmpty) {
       query = query.where('shoppingMalls', arrayContainsAny: selectedFilters);
@@ -209,13 +234,15 @@ class CategoryPageModel extends ChangeNotifier {
     final querySnapshot = await query.get();
 
     return querySnapshot.docs
-        .map((doc) => {
-              'id': doc.id,
-              'url': (doc.data() as Map<String, dynamic>?)?['url'],
-              'category': (doc.data() as Map<String, dynamic>?)?['category'],
-              'subCategory':
-                  (doc.data() as Map<String, dynamic>?)?['subCategory'],
-            })
+        .map((doc) =>
+    {
+      'id': doc.id,
+      'url': (doc.data() as Map<String, dynamic>?)?['url'],
+      'category': (doc.data() as Map<String, dynamic>?)?['category'],
+      'subCategory':
+      (doc.data() as Map<String, dynamic>?)?['subCategory'],
+      'timestamp': (doc.data() as Map<String, dynamic>?)?['timestamp'],
+    })
         .toList()
         .cast<Map<String, dynamic>>();
   }
@@ -251,24 +278,25 @@ class CategoryPageModel extends ChangeNotifier {
   Future<void> deleteImages() async {
     final confirm = await showDialog(
       context: navigatorKey.currentContext!,
-      builder: (context) => AlertDialog(
-        title:
+      builder: (context) =>
+          AlertDialog(
+            title:
             Text('사진 삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
-        content: Text('선택한 이미지를 삭제하시겠습니까?',
-            style: const TextStyle(fontFamily: 'KoreanFamily')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child:
+            content: Text('선택한 이미지를 삭제하시겠습니까?',
+                style: const TextStyle(fontFamily: 'KoreanFamily')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child:
                 Text('취소', style: const TextStyle(fontFamily: 'KoreanFamily')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child:
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child:
                 Text('삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -287,14 +315,18 @@ class CategoryPageModel extends ChangeNotifier {
 
         if (url.isNotEmpty) {
           final parts = url.split('/');
-          final fileName = parts.last.split('.').first;
+          final fileName = parts.last
+              .split('.')
+              .first;
           final folderPathParts = parts.sublist(7, parts.length - 1);
           final decodedPathParts =
-              folderPathParts.map(Uri.decodeComponent).toList();
+          folderPathParts.map(Uri.decodeComponent).toList();
           final publicId = decodedPathParts.join('/') + '/' + fileName;
 
           final timestamp =
-              (DateTime.now().millisecondsSinceEpoch / 1000).round();
+          (DateTime
+              .now()
+              .millisecondsSinceEpoch / 1000).round();
 
           final params = {
             'public_id': publicId,
@@ -306,7 +338,7 @@ class CategoryPageModel extends ChangeNotifier {
               .join('&');
 
           final signature =
-              sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
+          sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
 
           final response = await http.post(
             Uri.parse('$cloudinaryUrl$cloudName$cloudinaryEndpoint'),
@@ -325,7 +357,8 @@ class CategoryPageModel extends ChangeNotifier {
                 .delete();
           } else {
             print(
-                'Failed to delete image from Cloudinary. Status code: ${response.statusCode}');
+                'Failed to delete image from Cloudinary. Status code: ${response
+                    .statusCode}');
           }
         }
       }
