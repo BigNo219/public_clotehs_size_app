@@ -14,7 +14,7 @@ class CategoryPage extends StatelessWidget {
   final String subCategory;
 
   CategoryPage({required this.category, required this.subCategory});
-
+  
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -98,6 +98,8 @@ class CategoryPage extends StatelessWidget {
                                           child: CircularProgressIndicator()),
                                       errorWidget: (context, url, error) =>
                                           Icon(Icons.error),
+                                      memCacheHeight: 100,
+                                      memCacheWidth: 100,
                                     ),
                                   ),
                                   if (model.isSelectionMode)
@@ -198,12 +200,18 @@ class CategoryPageModel extends ChangeNotifier {
     loadImageData();
   }
 
-  DocumentSnapshot? _lastDocument;
-
+  // 최신 필터 + 스크롤 시 추가 데이터 로드
+  Timestamp? _lastTimestamp;
+  String? _lastDocumentId;
+  Map<String, Map<String, dynamic>> _imageDataMap = {};
+  
   Future<void> loadImageData() async {
     try {
       final newImageDataList = await _getImageDataList(category, subCategory);
-      imageDataList = await _getImageDataList(category, subCategory);
+      newImageDataList.forEach((imageData) {
+        _imageDataMap[imageData['id']] = imageData;
+      });
+      imageDataList = _imageDataMap.values.toList();
       isLoading = false;
       notifyListeners();
     } catch (error) {
@@ -214,38 +222,53 @@ class CategoryPageModel extends ChangeNotifier {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _getImageDataList(String category,
-      String subCategory) async {
+  Future<List<Map<String, dynamic>>> _getImageDataList(String category, String subCategory) async {
     Query query = FirebaseFirestore.instance
         .collection('images')
         .where('category', isEqualTo: category)
         .where('subCategory', isEqualTo: subCategory)
-        .orderBy('timestamp', descending: true)
-        .limit(15);
-
-    if (_lastDocument != null) {
-      query = query.startAfterDocument(_lastDocument!);
-    }
+        .orderBy('timestamp', descending: true);
 
     if (selectedFilters.isNotEmpty) {
       query = query.where('shoppingMalls', arrayContainsAny: selectedFilters);
+    }    
+
+    if (_lastTimestamp != null && _lastDocumentId != null) {
+      final lastDocumentSnapshot = await FirebaseFirestore.instance
+          .collection('images')
+          .doc(_lastDocumentId)
+          .get();
+
+      query = query.startAfterDocument(lastDocumentSnapshot);
     }
 
+    query = query.limit(15);
+    
     final querySnapshot = await query.get();
 
-    return querySnapshot.docs
-        .map((doc) =>
-    {
-      'id': doc.id,
-      'url': (doc.data() as Map<String, dynamic>?)?['url'],
-      'category': (doc.data() as Map<String, dynamic>?)?['category'],
-      'subCategory':
-      (doc.data() as Map<String, dynamic>?)?['subCategory'],
-      'timestamp': (doc.data() as Map<String, dynamic>?)?['timestamp'],
-    })
+    if (querySnapshot.docs.isNotEmpty) {
+      _lastTimestamp = querySnapshot.docs.last['timestamp'] as Timestamp?;
+      _lastDocumentId = querySnapshot.docs.last.id;
+    }
+
+    print('Last timestamp: $_lastTimestamp');
+    print('Last document ID: $_lastDocumentId');
+    print('Number of documents: ${querySnapshot.docs.length}');
+
+    final imageDataList = querySnapshot.docs
+        .map((doc) => {
+              'id': doc.id,
+              'url': (doc.data() as Map<String, dynamic>?)?['url'],
+              'category': (doc.data() as Map<String, dynamic>?)?['category'],
+              'subCategory': (doc.data() as Map<String, dynamic>?)?['subCategory'],
+              'timestamp': (doc.data() as Map<String, dynamic>?)?['timestamp'],
+            })
         .toList()
         .cast<Map<String, dynamic>>();
+
+    return imageDataList;
   }
+
 
   void toggleFilter(String filter) {
     if (selectedFilters.contains(filter)) {
@@ -253,6 +276,10 @@ class CategoryPageModel extends ChangeNotifier {
     } else {
       selectedFilters.add(filter);
     }
+    _imageDataMap.clear();
+    imageDataList.clear();
+    _lastTimestamp = null;
+    _lastDocumentId = null;
     loadImageData();
   }
 
