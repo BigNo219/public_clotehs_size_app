@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 class CategorySelectionPage extends StatefulWidget {
   final Function(String, String)? onCategorySelected;
 
-  CategorySelectionPage({this.onCategorySelected});
+  const CategorySelectionPage({super.key, this.onCategorySelected});
 
   @override
   _CategorySelectionPageState createState() => _CategorySelectionPageState();

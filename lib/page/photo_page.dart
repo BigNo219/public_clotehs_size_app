@@ -5,7 +5,6 @@ import 'package:ddundddun/models/category_form.dart';
 import '../models/radio_view_model.dart';
 import '../widgets/custom_divider_widget.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../widgets/radio_group_widget.dart';
 import '../widgets/radio_more_check_group_widget.dart';
 
@@ -14,7 +13,7 @@ class PhotoPage extends StatefulWidget {
   final String category;
   final String imageId;
 
-  PhotoPage({required this.imageUrl, required this.category, required this.imageId});
+  const PhotoPage({super.key, required this.imageUrl, required this.category, required this.imageId});
 
   @override
   _PhotoPageState createState() => _PhotoPageState();

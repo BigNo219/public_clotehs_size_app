@@ -7,7 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ddundddun/page/recent_photos_page.dart';
 import 'package:ddundddun/functions/refresh_count_file_categories.dart';
-import 'package:ddundddun/functions/delete_weekend_page.dart';
+import 'package:ddundddun/page/delete/delete_weekend_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:ddundddun/models/radio_view_model.dart';
