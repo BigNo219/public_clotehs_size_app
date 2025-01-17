@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ddundddun/page/photo_page.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class RecentPhotosPageModel extends ChangeNotifier {
   List<QueryDocumentSnapshot> _imageDocs = [];
@@ -11,13 +10,16 @@ class RecentPhotosPageModel extends ChangeNotifier {
   DocumentSnapshot? _lastDocument;
   bool _isLoading = false;
 
+  static const int initialLoadCount = 45; // 처음 로드할 이미지 수
+  static const int additionalLoadCount = 24; // 스크롤 추가로 로드할 이미지 수
+
   List<QueryDocumentSnapshot> get imageDocs => _imageDocs;
 
   List<String> get selectedFilters => _selectedFilters;
 
   bool get isLoading => _isLoading;
 
-  Future<void> fetchImages() async {
+  Future<void> fetchImages({bool isInitialLoad = false}) async {
     if (_isLoading) return;
 
     _isLoading = true;
@@ -26,7 +28,9 @@ class RecentPhotosPageModel extends ChangeNotifier {
     Query query = FirebaseFirestore.instance
         .collection('images')
         .orderBy('timestamp', descending: true)
-        .limit(15);
+        .limit(isInitialLoad
+            ? initialLoadCount
+            : additionalLoadCount); // 초기 로드인 경우 더 많은 이미지 로드
 
     if (_lastDocument != null) {
       query = query.startAfterDocument(_lastDocument!);
@@ -45,6 +49,12 @@ class RecentPhotosPageModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void resetImages() {
+    _imageDocs.clear();
+    _lastDocument = null;
+    fetchImages(isInitialLoad: true); // 초기 로드 플래그 전달
+  }
+
   void toggleFilter(String filter) {
     if (_selectedFilters.contains(filter)) {
       _selectedFilters.remove(filter);
@@ -52,12 +62,6 @@ class RecentPhotosPageModel extends ChangeNotifier {
       _selectedFilters.add(filter);
     }
     resetImages();
-  }
-
-  void resetImages() {
-    _imageDocs.clear();
-    _lastDocument = null;
-    fetchImages();
   }
 }
 
@@ -76,7 +80,7 @@ class _RecentPhotoPageState extends State<RecentPhotosPage> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => RecentPhotosPageModel()..fetchImages(),
+      create: (_) => RecentPhotosPageModel()..fetchImages(isInitialLoad: true),
       child: Column(
         children: [
           _buildFilterCheckboxes(),
