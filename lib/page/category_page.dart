@@ -1,3 +1,4 @@
+import 'package:ddundddun/widgets/optimized_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:ddundddun/page/photo_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,8 +14,9 @@ class CategoryPage extends StatelessWidget {
   final String category;
   final String subCategory;
 
-  CategoryPage({required this.category, required this.subCategory});
-  
+  const CategoryPage(
+      {super.key, required this.category, required this.subCategory});
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -55,7 +57,7 @@ class CategoryPage extends StatelessWidget {
                       return Center(
                           child: const Text('해당 카테고리에 저장된 사진이 없습니다.',
                               style:
-                              const TextStyle(fontFamily: 'KoreanFamily')));
+                                  const TextStyle(fontFamily: 'KoreanFamily')));
                     }
                     return NotificationListener<ScrollNotification>(
                       onNotification: (ScrollNotification scrollInfo) {
@@ -68,7 +70,7 @@ class CategoryPage extends StatelessWidget {
                       },
                       child: GridView.builder(
                         gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
                           crossAxisSpacing: 1,
                           mainAxisSpacing: 1,
@@ -86,22 +88,10 @@ class CategoryPage extends StatelessWidget {
                               onTap: model.isSelectionMode
                                   ? () => model.selectImage(imageId)
                                   : () => _openPhotoPage(
-                                  context, imageUrl, category, imageId),
+                                      context, imageUrl, category, imageId),
                               child: Stack(
                                 children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: CachedNetworkImage(
-                                      imageUrl: imageUrl,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Center(
-                                          child: CircularProgressIndicator()),
-                                      errorWidget: (context, url, error) =>
-                                          Icon(Icons.error),
-                                      memCacheHeight: 100,
-                                      memCacheWidth: 100,
-                                    ),
-                                  ),
+                                  OptimizedCachedImage(imageUrl: imageUrl),
                                   if (model.isSelectionMode)
                                     Positioned(
                                       top: 5,
@@ -136,8 +126,8 @@ class CategoryPage extends StatelessWidget {
     );
   }
 
-  void _openPhotoPage(BuildContext context, String imageUrl, String category,
-      String imageId) {
+  void _openPhotoPage(
+      BuildContext context, String imageUrl, String category, String imageId) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -204,7 +194,7 @@ class CategoryPageModel extends ChangeNotifier {
   Timestamp? _lastTimestamp;
   String? _lastDocumentId;
   Map<String, Map<String, dynamic>> _imageDataMap = {};
-  
+
   Future<void> loadImageData() async {
     try {
       final newImageDataList = await _getImageDataList(category, subCategory);
@@ -222,7 +212,8 @@ class CategoryPageModel extends ChangeNotifier {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _getImageDataList(String category, String subCategory) async {
+  Future<List<Map<String, dynamic>>> _getImageDataList(
+      String category, String subCategory) async {
     Query query = FirebaseFirestore.instance
         .collection('images')
         .where('category', isEqualTo: category)
@@ -231,7 +222,7 @@ class CategoryPageModel extends ChangeNotifier {
 
     if (selectedFilters.isNotEmpty) {
       query = query.where('shoppingMalls', arrayContainsAny: selectedFilters);
-    }    
+    }
 
     if (_lastTimestamp != null && _lastDocumentId != null) {
       final lastDocumentSnapshot = await FirebaseFirestore.instance
@@ -243,7 +234,7 @@ class CategoryPageModel extends ChangeNotifier {
     }
 
     query = query.limit(15);
-    
+
     final querySnapshot = await query.get();
 
     if (querySnapshot.docs.isNotEmpty) {
@@ -260,7 +251,8 @@ class CategoryPageModel extends ChangeNotifier {
               'id': doc.id,
               'url': (doc.data() as Map<String, dynamic>?)?['url'],
               'category': (doc.data() as Map<String, dynamic>?)?['category'],
-              'subCategory': (doc.data() as Map<String, dynamic>?)?['subCategory'],
+              'subCategory':
+                  (doc.data() as Map<String, dynamic>?)?['subCategory'],
               'timestamp': (doc.data() as Map<String, dynamic>?)?['timestamp'],
             })
         .toList()
@@ -268,7 +260,6 @@ class CategoryPageModel extends ChangeNotifier {
 
     return imageDataList;
   }
-
 
   void toggleFilter(String filter) {
     if (selectedFilters.contains(filter)) {
@@ -305,25 +296,24 @@ class CategoryPageModel extends ChangeNotifier {
   Future<void> deleteImages() async {
     final confirm = await showDialog(
       context: navigatorKey.currentContext!,
-      builder: (context) =>
-          AlertDialog(
-            title:
+      builder: (context) => AlertDialog(
+        title:
             Text('사진 삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
-            content: Text('선택한 이미지를 삭제하시겠습니까?',
-                style: const TextStyle(fontFamily: 'KoreanFamily')),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child:
+        content: Text('선택한 이미지를 삭제하시겠습니까?',
+            style: const TextStyle(fontFamily: 'KoreanFamily')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child:
                 Text('취소', style: const TextStyle(fontFamily: 'KoreanFamily')),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child:
-                Text('삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
-              ),
-            ],
           ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child:
+                Text('삭제', style: const TextStyle(fontFamily: 'KoreanFamily')),
+          ),
+        ],
+      ),
     );
 
     if (confirm == true) {
@@ -342,18 +332,14 @@ class CategoryPageModel extends ChangeNotifier {
 
         if (url.isNotEmpty) {
           final parts = url.split('/');
-          final fileName = parts.last
-              .split('.')
-              .first;
+          final fileName = parts.last.split('.').first;
           final folderPathParts = parts.sublist(7, parts.length - 1);
           final decodedPathParts =
-          folderPathParts.map(Uri.decodeComponent).toList();
+              folderPathParts.map(Uri.decodeComponent).toList();
           final publicId = decodedPathParts.join('/') + '/' + fileName;
 
           final timestamp =
-          (DateTime
-              .now()
-              .millisecondsSinceEpoch / 1000).round();
+              (DateTime.now().millisecondsSinceEpoch / 1000).round();
 
           final params = {
             'public_id': publicId,
@@ -365,7 +351,7 @@ class CategoryPageModel extends ChangeNotifier {
               .join('&');
 
           final signature =
-          sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
+              sha256.convert(utf8.encode('$paramString$apiSecret')).toString();
 
           final response = await http.post(
             Uri.parse('$cloudinaryUrl$cloudName$cloudinaryEndpoint'),
@@ -384,8 +370,7 @@ class CategoryPageModel extends ChangeNotifier {
                 .delete();
           } else {
             print(
-                'Failed to delete image from Cloudinary. Status code: ${response
-                    .statusCode}');
+                'Failed to delete image from Cloudinary. Status code: ${response.statusCode}');
           }
         }
       }

@@ -1,3 +1,4 @@
+import 'package:ddundddun/widgets/optimized_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ddundddun/page/photo_page.dart';
@@ -11,7 +12,9 @@ class RecentPhotosPageModel extends ChangeNotifier {
   bool _isLoading = false;
 
   List<QueryDocumentSnapshot> get imageDocs => _imageDocs;
+
   List<String> get selectedFilters => _selectedFilters;
+
   bool get isLoading => _isLoading;
 
   Future<void> fetchImages() async {
@@ -95,7 +98,7 @@ class _RecentPhotoPageState extends State<RecentPhotosPage> {
                   },
                   child: GridView.builder(
                     gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
@@ -112,21 +115,10 @@ class _RecentPhotoPageState extends State<RecentPhotosPage> {
                         return GestureDetector(
                           onTap: () => _openPhotoPage(
                               context, imageUrl, subCategory, imageId),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const Center(
-                                  child: CircularProgressIndicator()),
-                              errorWidget: (context, url, error) =>
-                              const Icon(Icons.error),
-                            ),
-                          ),
+                          child: OptimizedCachedImage(imageUrl: imageUrl),
                         );
                       } else if (model.isLoading) {
-                        return const Center(
-                            child: CircularProgressIndicator());
+                        return const Center(child: CircularProgressIndicator());
                       } else {
                         return const SizedBox.shrink();
                       }

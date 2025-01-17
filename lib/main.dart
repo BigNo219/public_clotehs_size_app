@@ -18,6 +18,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
   await Firebase.initializeApp();
+  PaintingBinding.instance.imageCache.maximumSize = 100;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 10 * 1024 * 1024; // 10MB
   runApp(
     ChangeNotifierProvider(
       create: (context) => RadioViewModel(),
@@ -147,9 +149,16 @@ class _MyHomePageState extends State<MyHomePage>
         ),
       );
 
-      return response.secureUrl;
+      // 업로드된 URL에 transformation 파라미터 추가
+      final baseUrl = response.secureUrl;
+      final transformedUrl = baseUrl.replaceAll(
+        '/upload/',
+        '/upload/w_100,h_100,c_fill,q_auto:eco,f_auto/',
+      );
+
+      return transformedUrl;
     } catch (e) {
-      print('Failed to upload image to Cloudinary: $e');
+      print('클라우디너리 이미지 업로드에 실패했습니다: $e');
       return '';
     }
   }

@@ -1,3 +1,4 @@
+import 'package:ddundddun/widgets/optimized_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -195,32 +196,22 @@ class _DeleteSelectedRecentPhotosPageState
                   final isSelected = model.selectedImageIds.contains(imageId);
                   return Stack(
                     fit: StackFit.expand,
-                    children: [
-                      GestureDetector(
-                        onTap: () => model.toggleImageSelection(imageId),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Center(
-                                child: CircularProgressIndicator()),
-                            errorWidget: (context, url, error) =>
-                                Icon(Icons.error),
-                          ),
+                      children: [
+                        GestureDetector(
+                          onTap: () => model.toggleImageSelection(imageId),
+                          child: OptimizedCachedImage(imageUrl: imageUrl),
                         ),
-                      ),
-                      if (isSelected)
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(10),
+                        if (isSelected)
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.check, color: Colors.white),
                             ),
-                            child: Icon(Icons.check, color: Colors.white),
                           ),
-                        ),
-                    ],
+                      ],
                   );
                 },
               ),

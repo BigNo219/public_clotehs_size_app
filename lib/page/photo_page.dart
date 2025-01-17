@@ -1,3 +1,4 @@
+import 'package:ddundddun/widgets/optimized_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ddundddun/models/category_form.dart';
@@ -136,13 +137,10 @@ class _PhotoPageState extends State<PhotoPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                CachedNetworkImage(
+                OptimizedCachedImage(
                   imageUrl: imageUrl,
                   width: 300.0,
                   height: 300.0,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => const CircularProgressIndicator(),
-                  errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
                 _buildMultilineTextField('title', '제목'),
                 _buildMultilineTextField('customerName', '거래처 명'),

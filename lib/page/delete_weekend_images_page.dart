@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ddundddun/widgets/optimized_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
@@ -47,13 +48,7 @@ class DeleteImagesPage extends StatelessWidget {
                   final imageUrl = imageData['url'] as String;
                   return Stack(
                     children: [
-                      CachedNetworkImage(
-                        imageUrl: imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            Center(child: CircularProgressIndicator()),
-                        errorWidget: (context, url, error) => Icon(Icons.error),
-                      ),
+                      OptimizedCachedImage(imageUrl: imageUrl),
                       Positioned(
                         top: 8,
                         right: 8,
