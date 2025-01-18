@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ddundddun/page/category_selection_page.dart';
@@ -11,6 +13,7 @@ import 'package:ddundddun/page/delete/delete_weekend_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:ddundddun/models/radio_view_model.dart';
+import 'package:http/http.dart' as http;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -19,7 +22,8 @@ Future<void> main() async {
   await dotenv.load(fileName: '.env');
   await Firebase.initializeApp();
   PaintingBinding.instance.imageCache.maximumSize = 100;
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 10 * 1024 * 1024; // 10MB
+  PaintingBinding.instance.imageCache.maximumSizeBytes =
+      10 * 1024 * 1024; // 10MB
   runApp(
     ChangeNotifierProvider(
       create: (context) => RadioViewModel(),
@@ -133,30 +137,34 @@ class _MyHomePageState extends State<MyHomePage>
   Future<String> uploadImageToCloudinary(
       String imagePath, String cloudinaryImagePath) async {
     try {
-      final cloudinary = CloudinaryPublic(
-        dotenv.env['CLOUD_NAME']!,
-        dotenv.env['CLOUDINARY_PRESET']!,
-        apiKey: dotenv.env['API_KEY']!,
-        apiSecret: dotenv.env['API_SECRET']!,
-        cache: false,
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(
+            'https://api.cloudinary.com/v1_1/${dotenv.env['CLOUD_NAME']}/image/upload'),
       );
 
-      final response = await cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
           imagePath,
-          resourceType: CloudinaryResourceType.Image,
-          folder: cloudinaryImagePath,
         ),
       );
 
-      // 업로드된 URL에 transformation 파라미터 추가
-      final baseUrl = response.secureUrl;
-      final transformedUrl = baseUrl.replaceAll(
-        '/upload/',
-        '/upload/w_100,h_100,c_fill,q_auto:eco,f_auto/',
-      );
+      request.fields.addAll({
+        'upload_preset': dotenv.env['CLOUDINARY_PRESET']!,
+        'folder': cloudinaryImagePath,
+      });
 
-      return transformedUrl;
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) {
+        throw Exception('클라우디너리 사진 업로드 실패: ${response.body}');
+      }
+
+      final responseData = json.decode(response.body);
+      return responseData['secure_url'] as String;
+
     } catch (e) {
       print('클라우디너리 이미지 업로드에 실패했습니다: $e');
       return '';
@@ -230,32 +238,111 @@ class _MyHomePageState extends State<MyHomePage>
 
   Future<void> _saveImage(
       String imagePath, String category, String subCategory) async {
-    final cloudinaryImagePath = '$category/$subCategory';
-
-    final imageUrl =
-        await uploadImageToCloudinary(imagePath, cloudinaryImagePath);
-    print('Image URL: $imageUrl');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text('" $category -> $subCategory "에 저장되었습니다.',
-              style: const TextStyle(fontFamily: 'KoreanFont'))),
-    );
-
-    final imageData = {
-      'url': imageUrl,
-      'category': category,
-      'subCategory': subCategory,
-      'timestamp': FieldValue.serverTimestamp(),
-    };
-
-    await FirebaseFirestore.instance.collection('images').add(imageData);
-    await showDialog(
+    // 로딩 다이얼로그 표시
+    showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        content: Image.network(imageUrl),
-      ),
+      barrierDismissible: false, // 바깥 클릭으로 닫기 방지
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 20),
+                const Text(
+                  '사진 저장 중...',
+                  style: TextStyle(
+                    fontFamily: 'KoreanFont',
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
+
+    try {
+      final cloudinaryImagePath = '$category/$subCategory';
+      final imageUrl =
+          await uploadImageToCloudinary(imagePath, cloudinaryImagePath);
+
+      if (imageUrl.isEmpty) {
+        throw Exception('이미지 업로드 실패');
+      }
+
+      // Firestore에 데이터 저장
+      final imageData = {
+        'url': imageUrl,
+        'category': category,
+        'subCategory': subCategory,
+        'timestamp': FieldValue.serverTimestamp(),
+      };
+
+      await FirebaseFirestore.instance.collection('images').add(imageData);
+
+      // 로딩 다이얼로그 닫기
+      Navigator.pop(context);
+
+      // 저장 완료 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '" $category -> $subCategory "에 저장되었습니다.',
+            style: const TextStyle(fontFamily: 'KoreanFont'),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // 이미지 미리보기 표시
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            content: Image.network(
+              imageUrl,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
+                  ),
+                );
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('확인',
+                    style: TextStyle(fontFamily: 'KoreanFont')),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // 로딩 다이얼로그 닫기
+      Navigator.pop(context);
+
+      // 에러 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '저장 중 오류가 발생했습니다: $e',
+            style: const TextStyle(fontFamily: 'KoreanFont'),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
@@ -290,7 +377,8 @@ class _MyHomePageState extends State<MyHomePage>
               icon: const Icon(Icons.refresh, color: Colors.grey),
               onPressed: () {
                 setState(() {
-                  _countFileCategories.countFilesInCategories(clothingCategories);
+                  _countFileCategories
+                      .countFilesInCategories(clothingCategories);
                 });
               },
             ),

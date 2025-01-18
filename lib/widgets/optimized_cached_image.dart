@@ -24,8 +24,8 @@ class OptimizedCachedImage extends StatelessWidget {
         fit: BoxFit.cover,
         width: width,
         height: height,
-        memCacheWidth: 100,
-        memCacheHeight: 100,
+        memCacheWidth: 150,
+        memCacheHeight: 150,
         placeholder: (context, url) => Container(
           color: Colors.grey[200],
           child: const Center(

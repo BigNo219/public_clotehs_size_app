@@ -30,6 +30,7 @@ dependencies:
   firebase_auth: ^5.4.0
   provider: ^6.1.2
   flutter_dotenv: ^5.1.0
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -65,8 +66,8 @@ ios:
   bundle_name: ddundddun
   bundle_display_name: UN;BUTTY SIZE
   bundle_identifier: com.example.ddundddun
-  bundle_version: 1.0.0+3
-  bundle_build_number: 3
+  bundle_version: 1.1.0
+  bundle_build_number: 1
   include_bitcode: true
   export_options_plist:
     method: app-store
