@@ -49,10 +49,20 @@ class RecentPhotosPageModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void resetImages() {
-    _imageDocs.clear();
+  Future<void> resetImages() async {
+    _imageDocs = [];
     _lastDocument = null;
-    fetchImages(isInitialLoad: true); // 초기 로드 플래그 전달
+    _isLoading = false;
+    notifyListeners();
+    await fetchImages(isInitialLoad: true);
+  }
+
+  Future<void> refresh() async {
+    _imageDocs = [];
+    _lastDocument = null;
+    _isLoading = false;
+    notifyListeners();
+    await fetchImages(isInitialLoad: true);
   }
 
   void toggleFilter(String filter) {
@@ -66,13 +76,18 @@ class RecentPhotosPageModel extends ChangeNotifier {
 }
 
 class RecentPhotosPage extends StatefulWidget {
+  const RecentPhotosPage({super.key});
+
   @override
   _RecentPhotoPageState createState() => _RecentPhotoPageState();
 }
 
 class _RecentPhotoPageState extends State<RecentPhotosPage> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void dispose() {
+    _scrollController.dispose();  // ScrollController 해제
     super.dispose();
     PaintingBinding.instance.imageCache.clear();
   }
@@ -87,46 +102,48 @@ class _RecentPhotoPageState extends State<RecentPhotosPage> {
           Expanded(
             child: Consumer<RecentPhotosPageModel>(
               builder: (context, model, child) {
-                final imageDocs = model.imageDocs;
-                if (imageDocs.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return NotificationListener<ScrollNotification>(
-                  onNotification: (ScrollNotification scrollInfo) {
-                    if (!model.isLoading &&
-                        scrollInfo.metrics.pixels ==
-                            scrollInfo.metrics.maxScrollExtent) {
-                      model.fetchImages();
-                    }
-                    return true;
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await model.refresh();  // refresh 메서드 호출
                   },
-                  child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: 1,
-                    ),
-                    padding: EdgeInsets.all(8),
-                    itemCount: imageDocs.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index < imageDocs.length) {
-                        final imageDoc = imageDocs[index];
-                        final imageUrl = imageDoc['url'];
-                        final imageId = imageDoc.id;
-                        final subCategory = imageDoc['subCategory'];
-                        return GestureDetector(
-                          onTap: () => _openPhotoPage(
-                              context, imageUrl, subCategory, imageId),
-                          child: OptimizedCachedImage(imageUrl: imageUrl),
-                        );
-                      } else if (model.isLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else {
-                        return const SizedBox.shrink();
-                      }
-                    },
+                  child: CustomScrollView(  // CustomScrollView로 변경
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    controller: _scrollController,
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: model.imageDocs.isEmpty && model.isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : null,
+                      ),
+                      SliverGrid(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 1,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                            if (index < model.imageDocs.length) {
+                              final imageDoc = model.imageDocs[index];
+                              final imageUrl = imageDoc['url'];
+                              final imageId = imageDoc.id;
+                              final subCategory = imageDoc['subCategory'];
+                              return GestureDetector(
+                                onTap: () => _openPhotoPage(
+                                    context, imageUrl, subCategory, imageId),
+                                child: OptimizedCachedImage(imageUrl: imageUrl),
+                              );
+                            } else if (model.isLoading) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+                            return null;
+                          },
+                          childCount: model.imageDocs.length + (model.isLoading ? 1 : 0),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ddundddun/page/category_selection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ddundddun/page/recent_photos_page.dart';

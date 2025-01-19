@@ -1,3 +1,4 @@
+import 'package:ddundddun/widgets/delete_confirmation_dialog.dart';
 import 'package:ddundddun/widgets/optimized_cached_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,19 +8,24 @@ import '../widgets/custom_divider_widget.dart';
 import 'package:provider/provider.dart';
 import '../widgets/radio_group_widget.dart';
 import '../widgets/radio_more_check_group_widget.dart';
+import 'package:ddundddun/functions/image_deletion_mixin.dart';
 
 class PhotoPage extends StatefulWidget {
   final String imageUrl;
   final String category;
   final String imageId;
 
-  const PhotoPage({super.key, required this.imageUrl, required this.category, required this.imageId});
+  const PhotoPage(
+      {super.key,
+      required this.imageUrl,
+      required this.category,
+      required this.imageId});
 
   @override
   _PhotoPageState createState() => _PhotoPageState();
 }
 
-class _PhotoPageState extends State<PhotoPage> {
+class _PhotoPageState extends State<PhotoPage> with ImageDeletionMixin {
   late Map<String, TextEditingController> _controllers;
   final ScrollController _scrollController = ScrollController();
 
@@ -33,6 +39,22 @@ class _PhotoPageState extends State<PhotoPage> {
     _fetchDataFromFireStore();
   }
 
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: const Text(
+        'SIZE & DETAIL',
+        style: TextStyle(color: Colors.white),
+      ),
+      backgroundColor: Colors.grey,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.delete_outline, color: Colors.white),
+          onPressed: () => _handleImageDelete(),
+        ),
+      ],
+    );
+  }
+
   Future<void> _saveDetails(RadioViewModel viewModel) async {
     try {
       final fields = CategoryInfo.categoryForms[widget.category] ?? [];
@@ -42,41 +64,31 @@ class _PhotoPageState extends State<PhotoPage> {
         'customerName': _controllers['customerName']!.text,
         'description': _controllers['description']!.text,
         for (var field in fields)
-          field: _controllers[field]?.text.isNotEmpty == true ? double.parse(
-              _controllers[field]!.text) : null,
-        'lining': viewModel.selectedLining
-            ?.toString()
-            .split('.')
-            .last ?? '',
-        'elasticity': viewModel.selectedElasticity
-            ?.toString()
-            .split('.')
-            .last ?? '',
-        'transparency': viewModel.selectedTransparency
-            ?.toString()
-            .split('.')
-            .last ?? '',
-        'texture': viewModel.selectedClothingTexture
-            ?.toString()
-            .split('.')
-            .last ?? '',
-        'fit': viewModel.selectedFit
-            ?.toString()
-            .split('.')
-            .last ?? '',
-        'thickness': viewModel.selectedThickness
-            ?.toString()
-            .split('.')
-            .last ?? '',
+          field: _controllers[field]?.text.isNotEmpty == true
+              ? double.parse(_controllers[field]!.text)
+              : null,
+        'lining': viewModel.selectedLining?.toString().split('.').last ?? '',
+        'elasticity':
+            viewModel.selectedElasticity?.toString().split('.').last ?? '',
+        'transparency':
+            viewModel.selectedTransparency?.toString().split('.').last ?? '',
+        'texture':
+            viewModel.selectedClothingTexture?.toString().split('.').last ?? '',
+        'fit': viewModel.selectedFit?.toString().split('.').last ?? '',
+        'thickness':
+            viewModel.selectedThickness?.toString().split('.').last ?? '',
         'seasons': viewModel.selectedSeasons
-            ?.map((season) => season.toString().split('.').last)
-            .toList() ?? [],
-        'shoppingMalls' : viewModel.selectedShoppingMalls
-            ?.map((mall) => mall.toString().split('.').last)
-            .toList() ?? [],
+                ?.map((season) => season.toString().split('.').last)
+                .toList() ??
+            [],
+        'shoppingMalls': viewModel.selectedShoppingMalls
+                ?.map((mall) => mall.toString().split('.').last)
+                .toList() ??
+            [],
       };
 
-      await FirebaseFirestore.instance.collection('images')
+      await FirebaseFirestore.instance
+          .collection('images')
           .doc(widget.imageId)
           .update(data);
 
@@ -90,6 +102,37 @@ class _PhotoPageState extends State<PhotoPage> {
     }
   }
 
+  Future<void> _handleImageDelete() async {
+    final shouldDelete = await showDeleteConfirmationDialog(
+      context: context,
+      count: 1,
+    );
+
+    if (shouldDelete == true) {
+      try {
+        final success =
+            await deleteCloudinaryImage(widget.imageUrl, widget.imageId);
+
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('이미지가 삭제되었습니다')),
+          );
+          Navigator.pop(context); // 삭제 후 이전 페이지로 이동
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('이미지 삭제에 실패했습니다')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('오류가 발생했습니다: $e')),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _fetchDataFromFireStore() async {
     final viewModel = context.read<RadioViewModel>();
     await viewModel.initializeFromFirestore(widget.imageId);
@@ -98,14 +141,12 @@ class _PhotoPageState extends State<PhotoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(
-          'SIZE & DETAIL',
-          style: TextStyle(color: Colors.white),
-      ),
-        backgroundColor: Colors.grey,
-      ),
+      appBar:_buildAppBar(),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('images').doc(widget.imageId).snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('images')
+            .doc(widget.imageId)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -126,9 +167,13 @@ class _PhotoPageState extends State<PhotoPage> {
 
           _controllers = {
             'title': TextEditingController(text: imageData?['title'] ?? ''),
-            'customerName': TextEditingController(text: imageData?['customerName'] ?? ''),
-            'description': TextEditingController(text: imageData?['description'] ?? ''),
-            for (var field in fields) field: TextEditingController(text: imageData?[field]?.toString() ?? ''),
+            'customerName':
+                TextEditingController(text: imageData?['customerName'] ?? ''),
+            'description':
+                TextEditingController(text: imageData?['description'] ?? ''),
+            for (var field in fields)
+              field: TextEditingController(
+                  text: imageData?[field]?.toString() ?? ''),
           };
 
           return SingleChildScrollView(
@@ -144,7 +189,9 @@ class _PhotoPageState extends State<PhotoPage> {
                 _buildMultilineTextField('title', '제목'),
                 _buildMultilineTextField('customerName', '거래처 명'),
                 _buildMultilineTextField('description', '추가 정보'),
-                ...fields.map((field) => _buildTextField(field, field)).toList(),
+                ...fields
+                    .map((field) => _buildTextField(field, field))
+                    .toList(),
                 Consumer<RadioViewModel>(
                   builder: (context, viewModel, child) {
                     return Column(
@@ -220,9 +267,11 @@ class _PhotoPageState extends State<PhotoPage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton(
-                    onPressed: () => _saveDetails(context.read<RadioViewModel>()),
+                    onPressed: () =>
+                        _saveDetails(context.read<RadioViewModel>()),
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.black87),
+                      backgroundColor:
+                          MaterialStateProperty.all(Colors.black87),
                       foregroundColor: MaterialStateProperty.all(Colors.white),
                       shape: MaterialStateProperty.all(
                         RoundedRectangleBorder(
@@ -231,7 +280,8 @@ class _PhotoPageState extends State<PhotoPage> {
                       ),
                       elevation: MaterialStateProperty.all(8.0),
                       padding: MaterialStateProperty.all(
-                        const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+                        const EdgeInsets.symmetric(
+                            vertical: 16.0, horizontal: 24.0),
                       ),
                     ),
                     child: const Text('SAVE DETAILS'),
@@ -281,7 +331,8 @@ class _PhotoPageState extends State<PhotoPage> {
             fontWeight: FontWeight.bold,
           ),
           border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
         ),
         maxLines: null,
         keyboardType: TextInputType.multiline,
